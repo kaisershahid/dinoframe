@@ -19,10 +19,6 @@ export type DecoratorRecord<T extends any = any> = {
 	metadata: T;
 };
 
-export type GidEnabled = {
-	gid: string;
-};
-
 export type DecoratedMethod<
 	Method extends any = any,
 	Parameter extends any = any
@@ -31,6 +27,9 @@ export type DecoratedMethod<
 	parameters: Parameter[][];
 };
 
+/**
+ * A convenient structure encapsulating all class decorations.
+ */
 export type DecoratedClass<
 	Clazz extends any = any,
 	Method extends any = any,
@@ -39,10 +38,13 @@ export type DecoratedClass<
 > = {
 	gid: string;
 	metadata: Clazz[];
-	methods: Record<string, DecoratedMethod>;
+	methods: Record<string, DecoratedMethod<Method, Parameter>>;
 	properties: Record<string, Property[]>;
 };
 
+/**
+ * Generates an empty structure with given gid.
+ */
 export const getEmptyDecoratedClass = <
 	Clazz extends object = any,
 	Method extends object = any,
@@ -60,7 +62,10 @@ export const getEmptyDecoratedClass = <
 };
 
 /**
- * Iteratively construct a class tree of decorators for easy post-process introspection.
+ * Iteratively construct a class tree of decorators for easy in-process and post-
+ * process introspection. This is a concrete and easy-to-work-with alternative
+ * to reflect-metadata with extra benefits (e.g. annotation libs can expose
+ * their metadata via gid).
  */
 export class DecoratedClassBuilder<
 	Clazz extends object = any,

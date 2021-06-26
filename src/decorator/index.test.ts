@@ -1,5 +1,6 @@
-import exp from "constants";
-import { DecoratedClassBuilder } from "./index";
+import exp from 'constants';
+import { DecoratedClassBuilder } from './index';
+import { getOrMakeGidForConstructor, GidEnabledClass } from './registry';
 
 type ClassMeta = {
 	name: string;
@@ -52,7 +53,7 @@ const MethodDecorator = (params: { validate: boolean }) => {
 
 const PropertyDecorator = () => {
 	return (proto: any, name: string, desc?: any) => {
-		console.log("property", name);
+		console.log('property', name);
 	};
 };
 
@@ -62,66 +63,79 @@ const ParameterDecorator = (params: { matchRegex: RegExp }) => {
 	};
 };
 
-@ClassDecorator({ name: "Example" })
+@ClassDecorator({ name: 'Example' })
 class Example {
 	@MethodDecorator({ validate: true })
 	method1(
 		@ParameterDecorator({ matchRegex: /hello/ }) param: string,
-		@ParameterDecorator({ matchRegex: /^bye!?$/ }) param2 = ""
+		@ParameterDecorator({ matchRegex: /^bye!?$/ }) param2 = ''
 	) {}
 
 	@PropertyDecorator()
 	prop1 = 5;
 }
 
-@ClassDecorator({ name: "Example2" })
+@ClassDecorator({ name: 'Example2' })
 class Example2 {}
 
-describe("module: decorator", () => {
-	describe("DecoratedClassBuilder", () => {
+describe('module: decorator', () => {
+	describe('DecoratedClassBuilder', () => {
 		const finalized = collector.getFinalized();
-		it("processes Example", () => {
+		it('processes Example', () => {
 			const record = finalized[0];
-			expect(record.gid).toEqual("1");
-			expect(record.metadata[0].name).toEqual("Example");
-			expect(record.methods["method1"]).not.toBeUndefined();
-			expect(record.methods["method1"].parameters[0].length).toEqual(1);
+			expect(record.gid).toEqual('1');
+			expect(record.metadata[0].name).toEqual('Example');
+			expect(record.methods['method1']).not.toBeUndefined();
+			expect(record.methods['method1'].parameters[0].length).toEqual(1);
 			expect(
-				record.methods["method1"].parameters[0][0].matchRegex
+				record.methods['method1'].parameters[0][0].matchRegex
 			).toEqual(/hello/);
 		});
 
-		it("processes Example2", () => {
+		it('processes Example2', () => {
 			const record = finalized[1];
-			expect(record.gid).toEqual("2");
-			expect(record.metadata[0].name).toEqual("Example2");
+			expect(record.gid).toEqual('2');
+			expect(record.metadata[0].name).toEqual('Example2');
 			expect(Object.keys(record.methods).length).toEqual(0);
 			expect(Object.keys(record.properties).length).toEqual(0);
 		});
 	});
 
-	describe("modifying class behavior of Example", () => {
+	describe('modifying class behavior of Example', () => {
 		const ex1 = new Example();
 		it(`successfully runs method1('hello')`, () => {
-			ex1.method1("hello");
+			ex1.method1('hello');
 		});
 
 		it(`fails method1('hell')`, () => {
 			try {
-				ex1.method1("hell");
-				throw "expected-error";
+				ex1.method1('hell');
+				throw 'expected-error';
 			} catch (e) {
-				expect(e.message).toEqual("0 - hell did not match /hello/");
+				expect(e.message).toEqual('0 - hell did not match /hello/');
 			}
 		});
 
 		it(`fails method1(' hello ', 'll')`, () => {
 			try {
-				ex1.method1(" hello ", "ll");
-				throw "expected-error";
+				ex1.method1(' hello ', 'll');
+				throw 'expected-error';
 			} catch (e) {
-				expect(e.message).toEqual("1 - ll did not match /^bye!?$/");
+				expect(e.message).toEqual('1 - ll did not match /^bye!?$/');
 			}
+		});
+	});
+
+	describe('module: registry', () => {
+		@GidEnabledClass()
+		class GidClass {}
+
+		describe('GidEnabledClass & #swapConstructorWithSubclass()', () => {
+			it('extends GidClass and maps gid to subclass', () => {
+				const gid = getOrMakeGidForConstructor(GidClass);
+				const clazz = new GidClass() as any;
+				expect(clazz.getDecoratorGid()).toEqual(gid);
+			});
 		});
 	});
 });

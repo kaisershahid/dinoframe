@@ -1,18 +1,24 @@
 /**
  * The decorator registry provides a consistent way to get a unique identifier
- * for the class currently being processed.
+ * for the class currently being processed. You  can also get the gid of any
+ * class post-processing.
+ *
+ * The lookup is performed as follows:
+ *
+ * - if given object is a class, get its .prototype
+ * - find or create gid for given prototype
  */
 const prototypeRegistry: Record<string, any> = {};
 const prototypeOrder: Function[] = [];
 const constructorRegistry: Record<string, Function> = {};
 
 let gcounter = 1;
-let lastGid: string = "";
+let lastGid: string = '';
 let lastTarget: any;
 let lastTargetWasClass = false;
 
 export const findGidForConstructor = (t: any): string => {
-	const isClass = typeof t == "function";
+	const isClass = typeof t == 'function';
 	let o: any = t;
 	if (isClass) {
 		o = t.prototype;
@@ -24,7 +30,7 @@ export const findGidForConstructor = (t: any): string => {
 		}
 	}
 
-	return "";
+	return '';
 };
 
 /**
@@ -36,7 +42,7 @@ export const findGidForConstructor = (t: any): string => {
  *   - wasLastClass() is true
  */
 export const getOrMakeGidForConstructor = (t: any): string => {
-	const isClass = typeof t == "function";
+	const isClass = typeof t == 'function';
 	let o: any = t;
 	if (isClass) {
 		o = t.prototype;
@@ -76,8 +82,8 @@ export const getConstructorForGid = (gid: string): Function =>
 	constructorRegistry[gid];
 
 /**
- * Invoke this if decorator modifies class so that future references will target the right thing. Assumes serial processing
- * of decorators and classes.
+ * If your class decorator extends base class, call this function to associate
+ * the gid to the subclass (otherwise it'll always be associated with the base.
  */
 export const swapConstructorWithSubclass = (subclass: Function) => {
 	if (lastGid) {
@@ -85,4 +91,33 @@ export const swapConstructorWithSubclass = (subclass: Function) => {
 		prototypeOrder[prototypeOrder.length - 1] = subclass;
 		prototypeRegistry[lastGid] = subclass;
 	}
+};
+
+export type DecoratorGidEnabled = {
+	getDecoratorGid(): string;
+};
+
+export const isDecoratorGidEnabled = (o: any): o is DecoratorGidEnabled =>
+	typeof o?.getDecoratorGid === 'function';
+
+/**
+ * Attaches the gid to a class for convenient access. If you plan on querying
+ * classes' gids frequently, consider annotating with this to avoid lookup
+ * costs (only necessary for post-processing usage).
+ */
+export const GidEnabledClass = () => {
+	return <T extends { new (...args: any[]): {} }>(constructor: T) => {
+		const gid = getOrMakeGidForConstructor(constructor);
+		const newConstructor = class
+			extends constructor
+			implements DecoratorGidEnabled
+		{
+			getDecoratorGid() {
+				return gid;
+			}
+		};
+
+		swapConstructorWithSubclass(newConstructor);
+		return newConstructor;
+	};
 };
