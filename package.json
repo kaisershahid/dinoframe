@@ -17,9 +17,11 @@
 	},
 	"devDependencies": {
 		"@types/exif": "^0.6.1",
-		"@types/node": "^13.11.0",
+		"@types/express": "^4.17.12",
 		"@types/jest": "^26.0.23",
+		"@types/node": "^13.11.0",
 		"awesome-typescript-loader": "^5.2.1",
+		"express": "^4.17.1",
 		"jest": "^27.0.5",
 		"prettier": "^2.0.5",
 		"ts-jest": "^27.0.3"

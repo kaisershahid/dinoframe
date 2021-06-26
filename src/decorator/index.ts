@@ -3,8 +3,13 @@
  * metadata for reflection.
  */
 
-import EventEmitter from "events";
-import { getOrMakeGidForConstructor } from "./registry";
+import EventEmitter from 'events';
+import { getOrMakeGidForConstructor } from './registry';
+
+export type DecoratedParameter = {
+	method: string;
+	pos: number;
+};
 
 export enum DecoratorRecordType {
 	clazz = 1,
@@ -73,13 +78,13 @@ export class DecoratedClassBuilder<
 	Parameter extends object = any,
 	Property extends object = any
 > {
-	curGid = "";
+	curGid = '';
 	cur: DecoratedClass = getEmptyDecoratedClass<
 		Clazz,
 		Method,
 		Property,
 		Parameter
-	>("");
+	>('');
 
 	private finalized: DecoratedClass[] = [];
 	private finalizedCalled = false;
@@ -144,7 +149,7 @@ export class DecoratedClassBuilder<
 			this.finalizedCalled = true;
 			if (this.curGid) {
 				this.finalized.push({ ...this.cur });
-				this.curGid = "";
+				this.curGid = '';
 			}
 		}
 
