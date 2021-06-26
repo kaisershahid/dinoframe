@@ -1,0 +1,55 @@
+{
+  "name": "@acmedinotech/APP_NAME",
+  "scripts": {
+    "exec": "ts-node src/index.ts",
+    "distexec": "ts-node dist/index.js",
+    "test": "mocha --recursive --require ts-node/register '{src,tests}/**/*.test.ts'",
+    "prepack": "npx webpack",
+    "release": "source release.sh"
+  },
+  "description": "APP_DESCRIPTION",
+  "bin": {
+  },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "dependencies": {
+    "@types/exif": "^0.6.1",
+    "@types/node": "^13.11.0",
+    "exif": "^0.6.0",
+    "exif-makernote-fix": "^0.1.0",
+    "exiftool-vendored": "^13.1.0",
+    "ts-node": "^8.8.2",
+    "typescript": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.12",
+    "@types/cheerio": "^0.22.22",
+    "@types/mocha": "^8.0.3",
+    "awesome-typescript-loader": "^5.2.1",
+    "chai": "^4.2.0",
+    "mocha": "^8.1.1",
+    "prettier": "^2.0.5"
+  },
+  "version": "0.8.14",
+  "license": "GPL-3.0-or-later",
+  "directories": {
+    "doc": "docs",
+    "lib": "dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaisershahid/APP_NAME.git"
+  },
+  "keywords": [
+    "markdown",
+    "lex",
+    "parse",
+    "template",
+    "markup"
+  ],
+  "author": "kaiser shahid",
+  "bugs": {
+    "url": "https://github.com/kaisershahid/APP_NAME/issues"
+  },
+  "homepage": "https://github.com/kaisershahid/APP_NAME#readme"
+}
