@@ -73,7 +73,6 @@ export class ExampleController {
         return {err, p1};
     }
 
-
     static discover() {
     }
 }

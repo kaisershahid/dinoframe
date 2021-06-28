@@ -88,6 +88,7 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 		it('fails p1 because of invalid enum', () => {
 			request.query = { p1: '1' };
 			p1Enum(request, response, next);
+			expect(err).toBeUndefined();
 			request.query = { p1: '3' };
 			p1Enum(request, response, next);
 			expect(err.message).toEqual(`p1: got 3; expected: ["1","2"]`);
