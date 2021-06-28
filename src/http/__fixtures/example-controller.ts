@@ -1,4 +1,4 @@
-import { Controller, Param, Route } from '../decorators';
+import { Controller, RequestParam, Route } from '../decorators';
 
 @Controller({
 	path: '/prefix',
@@ -13,7 +13,7 @@ export class ExampleController {
 	doGet() {}
 
 	@Route({ path: '/p1-injected', priority: -50 })
-	p1Injected(request, response, next, @Param({ name: 'p1' }) p1?) {
+	p1Injected(request, response, next, @RequestParam({ name: 'p1' }) p1?) {
 		return p1;
 	}
 
@@ -22,7 +22,7 @@ export class ExampleController {
 		request,
 		response,
 		next,
-		@Param({ name: 'p1', required: true }) p1?: any
+		@RequestParam({ name: 'p1', required: true }) p1?: any
 	) {}
 
 	@Route({ path: '/p1-enum', priority: 100 })
@@ -30,7 +30,7 @@ export class ExampleController {
 		request,
 		response,
 		next,
-		@Param({ name: 'p1', enumValues: ['1', '2'] }) p1?
+		@RequestParam({ name: 'p1', enumValues: ['1', '2'] }) p1?
 	) {}
 
 	@Route({ path: '/p1-validator-transformer', priority: 88 })
@@ -38,7 +38,7 @@ export class ExampleController {
 		request,
 		response,
 		next,
-		@Param({
+		@RequestParam({
 			name: 'p1',
 			transformer: (val: any) => {
 				if (val === 'to-error') {
