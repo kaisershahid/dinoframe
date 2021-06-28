@@ -42,6 +42,7 @@ export type DecoratedClass<
 	Parameter extends any = any
 > = {
 	gid: string;
+	clazz: any;
 	metadata: Clazz[];
 	methods: Record<string, DecoratedMethod<Method, Parameter>>;
 	properties: Record<string, Property[]>;
@@ -60,6 +61,7 @@ export const getEmptyDecoratedClass = <
 ): DecoratedClass<Clazz, Method, Parameter, Property> => {
 	return {
 		gid,
+		clazz: undefined,
 		metadata: [],
 		methods: {},
 		properties: {},
@@ -124,6 +126,7 @@ export class DecoratedClassBuilder<
 
 	pushClass(clazz: any, metadata: Clazz) {
 		this.checkProto(clazz);
+		this.cur.clazz = clazz;
 		this.cur.metadata.push(metadata);
 	}
 

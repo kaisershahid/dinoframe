@@ -1,7 +1,14 @@
 import { Request, Response } from 'express';
 import { DecoratedParameter } from '../decorator';
 
-export type BaseDecoratorParams = {
+export type HeaderRecord = {
+	name?: string;
+	values?: string[];
+	description?: string;
+	required?: boolean;
+};
+
+export type BaseDecoratorConfig = {
 	[key: string]: any;
 	priority?: number;
 	path?: string;
@@ -9,21 +16,39 @@ export type BaseDecoratorParams = {
 	headers?: Record<string, HeaderRecord>;
 };
 
-export type RouteParams = BaseDecoratorParams & {
+export type RouteConfig = BaseDecoratorConfig & {
 	path: string;
+	/** @todo unsupported; reconcile with @RequestParam */
 	parameters?: Record<string, ParameterRecord>;
+	/** @todo unsupported */
 	body?: BodyRecord;
+	/** @todo unsupported */
 	response?: ResponseRecord;
 };
 
-export type ControllerParams = BaseDecoratorParams & {
+export type MiddlewareConfig = BaseDecoratorConfig & {};
+
+export type ErrorMiddlewareConfig = BaseDecoratorConfig & {};
+
+export enum HandlerConfigType {
+	route = 1,
+	middleware = 2,
+	error = 3,
+}
+
+export type HandlerConfig = (RouteConfig|MiddlewareConfig|ErrorMiddlewareConfig) & {
+	type: HandlerConfigType
+}
+
+export type ControllerConfig = BaseDecoratorConfig & {
+	/** @todo unsupported */
 	deserializer?: any;
 };
 
 export type InjectableParamContext = {
 	request: Request;
 	response: Response;
-	def: InjectableParam;
+	def: RequestParamConfig;
 };
 
 export type InjectableParamValidator = (
@@ -36,7 +61,7 @@ export type InjectableParamTransformer = (
 	context: InjectableParamContext
 ) => any;
 
-export type InjectableParam = {
+export type RequestParamConfig = {
 	name: string;
 	required?: boolean;
 	enumValues?: any[];
@@ -44,31 +69,18 @@ export type InjectableParam = {
 	transformer?: InjectableParamTransformer;
 };
 
-export type InjectedParams = DecoratedParameter & InjectableParam;
+export type InjectedRequestParam = DecoratedParameter & RequestParamConfig;
 
-export class InjectableParamError extends Error {
-	params: InjectableParam;
+export class RequestParamError extends Error {
+	params: RequestParamConfig;
 
-	constructor(message, params: InjectableParam) {
+	constructor(message, params: RequestParamConfig) {
 		super(message);
 		this.params = params;
 	}
 }
 
 // @TODO clean below
-
-export enum HandlerType {
-	route = 1,
-	middleware = 2,
-	error = 3,
-}
-
-export type HeaderRecord = {
-	name?: string;
-	values?: string[];
-	description?: string;
-	required?: boolean;
-};
 
 export type ParameterRecord = {
 	name?: string;
@@ -94,7 +106,7 @@ export type ResponseRecord = {
 };
 
 export type HandlerRecord = {
-	type: HandlerType;
+	type: HandlerConfigType;
 	/** Default: `''` */
 	path: string;
 	/** Default: `[]` */
@@ -114,8 +126,8 @@ export type HandlerRecord = {
 };
 
 type HandlerEntry = {
-	params: RouteParams | BaseDecoratorParams;
-	type: HandlerType;
+	params: RouteConfig | BaseDecoratorConfig;
+	type: HandlerConfigType;
 	invokeName: string;
 	gid: string;
 	desc: PropertyDescriptor;

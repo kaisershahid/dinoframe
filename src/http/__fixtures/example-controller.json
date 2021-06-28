@@ -1,0 +1,133 @@
+{
+	"gid": "1",
+	"metadata": [
+		{
+			"path": "/prefix",
+			"methods": ["PUT"]
+		}
+	],
+	"methods": {
+		"doGet": {
+			"metadata": [
+				{
+					"name": "doGet",
+					"desc": {
+						"writable": true,
+						"enumerable": false,
+						"configurable": true
+					},
+					"path": "/get",
+					"methods": ["GET"],
+					"priority": -1
+				}
+			],
+			"parameters": []
+		},
+		"p1Injected": {
+			"metadata": [
+				{
+					"name": "p1Injected",
+					"desc": {
+						"writable": true,
+						"enumerable": false,
+						"configurable": true
+					},
+					"path": "/p1-injected",
+					"priority": -50
+				}
+			],
+			"parameters": [
+				null,
+				null,
+				null,
+				[
+					{
+						"method": "p1Injected",
+						"pos": 3,
+						"name": "p1"
+					}
+				]
+			]
+		},
+		"p1Required": {
+			"metadata": [
+				{
+					"name": "p1Required",
+					"desc": {
+						"writable": true,
+						"enumerable": false,
+						"configurable": true
+					},
+					"path": "/p1-required"
+				}
+			],
+			"parameters": [
+				null,
+				null,
+				null,
+				[
+					{
+						"method": "p1Required",
+						"pos": 3,
+						"name": "p1",
+						"required": true
+					}
+				]
+			]
+		},
+		"p1Enum": {
+			"metadata": [
+				{
+					"name": "p1Enum",
+					"desc": {
+						"writable": true,
+						"enumerable": false,
+						"configurable": true
+					},
+					"path": "/p1-enum",
+					"priority": 100
+				}
+			],
+			"parameters": [
+				null,
+				null,
+				null,
+				[
+					{
+						"method": "p1Enum",
+						"pos": 3,
+						"name": "p1",
+						"enumValues": ["1", "2"]
+					}
+				]
+			]
+		},
+		"p1ValidatorTransformer": {
+			"metadata": [
+				{
+					"name": "p1ValidatorTransformer",
+					"desc": {
+						"writable": true,
+						"enumerable": false,
+						"configurable": true
+					},
+					"path": "/p1-validator-transformer",
+					"priority": 88
+				}
+			],
+			"parameters": [
+				null,
+				null,
+				null,
+				[
+					{
+						"method": "p1ValidatorTransformer",
+						"pos": 3,
+						"name": "p1"
+					}
+				]
+			]
+		}
+	},
+	"properties": {}
+}
