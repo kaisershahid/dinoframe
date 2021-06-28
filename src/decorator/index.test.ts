@@ -52,9 +52,7 @@ const MethodDecorator = (params: { validate: boolean }) => {
 };
 
 const PropertyDecorator = () => {
-	return (proto: any, name: string, desc?: any) => {
-		console.log('property', name);
-	};
+	return (proto: any, name: string, desc?: any) => {};
 };
 
 const ParameterDecorator = (params: { matchRegex: RegExp }) => {

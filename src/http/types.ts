@@ -7,6 +7,7 @@ export type BaseDecoratorParams = {
 	path?: string;
 	methods?: string[];
 	headers?: Record<string, HeaderRecord>;
+	__type?: number;
 };
 
 export type RouteParams = BaseDecoratorParams & {
@@ -15,6 +16,10 @@ export type RouteParams = BaseDecoratorParams & {
 	body?: BodyRecord;
 	response?: ResponseRecord;
 };
+
+export type MiddlewareParams = BaseDecoratorParams & {};
+
+export type ErrorMiddlewareParams = BaseDecoratorParams & {};
 
 export type ControllerParams = BaseDecoratorParams & {
 	deserializer?: any;

@@ -1,17 +1,8 @@
-import {
-	Handler,
-	NextFunction,
-	Request,
-	RequestHandler,
-	Response,
-} from 'express';
-import { argv } from 'process';
+import { Request, RequestHandler, Response } from 'express';
 import { DecoratedClassBuilder, DecoratedMethod } from '../decorator';
 import {
-	BaseDecoratorParams,
 	ControllerParams,
 	InjectableParam,
-	InjectableParamContext,
 	InjectableParamError,
 	InjectedParams,
 	RouteParams,
@@ -39,79 +30,6 @@ export const isParameterEmpty = (v: any): boolean =>
 export const Route = (params: RouteParams) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
 		collector.pushMethod(proto, name, { name, desc, ...params });
-		const methDef = collector.cur.methods[name];
-		const method = (desc.value as Function) ?? (() => {});
-		desc.value = (
-			request: Request,
-			response: Response,
-			next: NextFunction
-		) => {
-			const pushArgs: any[] = [];
-			for (let i = 0; i < methDef.parameters.length; i++) {
-				// console.log(methDef);
-				if (methDef.parameters[i] === undefined) {
-					pushArgs[i] = undefined;
-					continue;
-				}
-
-				let argVal: any = undefined;
-				const params = methDef.parameters[i] as InjectedParams[];
-				for (const param of params) {
-					const {
-						pos,
-						name,
-						required,
-						enumValues,
-						validator,
-						transformer,
-					} = param;
-					// @todo extract from body if possible
-					argVal = request.query[name];
-
-					if (required && isParameterEmpty(argVal)) {
-						throw new InjectableParamError(
-							`${name}: required`,
-							param
-						);
-					}
-
-					const ctx = {
-						request,
-						response,
-						def: param,
-					};
-
-					if (transformer) {
-						argVal = transformer(argVal, ctx);
-					}
-
-					if (validator) {
-						const errMsg = validator(argVal, ctx);
-						if (errMsg) {
-							throw new InjectableParamError(
-								`${name}: ${errMsg}`,
-								param
-							);
-						}
-					} else if (enumValues) {
-						if (!enumValues.includes(argVal)) {
-							throw new InjectableParamError(
-								`${name}: got ${argVal}; expected: ${JSON.stringify(
-									enumValues
-								)}`,
-								param
-							);
-						}
-					}
-
-					// @todo replace request.query[name] with argVal?
-				}
-
-				pushArgs[i] = argVal;
-			}
-
-			return method(...[request, response, next, ...pushArgs.slice(3)]);
-		};
 	};
 };
 
@@ -142,20 +60,21 @@ export const extractParametersAsArgsFromRequest = (
 
 		let argVal: any = undefined;
 		const params = route.parameters[i] as InjectedParams[];
-		for (const param of params) {
-			const { name, transformer } = param;
-			// @todo extract from body if possible
-			argVal = request.query[name];
 
-			const ctx = {
-				request,
-				response,
-				def: param,
-			};
+		// we expect 1 @InjectableParam per arg
+		const param = params[0];
+		const { name, transformer } = param;
+		// @todo extract from body if possible
+		argVal = request.query[name];
 
-			if (transformer) {
-				argVal = transformer(argVal, ctx);
-			}
+		const ctx = {
+			request,
+			response,
+			def: param,
+		};
+
+		if (transformer) {
+			argVal = transformer(argVal, ctx);
 		}
 
 		pushArgs[i] = argVal;
@@ -184,34 +103,34 @@ export const applyConstraintsToArgs = (
 			continue;
 		}
 
-		for (const param of params) {
-			const { name, required, enumValues, validator, transformer } =
-				param;
+		// we expect 1 @InjectableParam per arg
+		const param = params[0];
+		const { name, required, enumValues, validator, transformer } = param;
 
-			for (const arg of args) {
-				if (required && isParameterEmpty(arg)) {
-					throw new InjectableParamError(`${name}: required`, param);
-				} else if (validator) {
-					const errMsg = validator(arg, {
-						request,
-						response,
-						def: param,
-					});
-					if (errMsg) {
-						throw new InjectableParamError(
-							`${name}: ${errMsg}`,
-							param
-						);
-					}
-				} else if (enumValues) {
-					if (!enumValues.includes(arg)) {
-						throw new InjectableParamError(
-							`${name}: got ${arg}; expected: ${JSON.stringify(
-								enumValues
-							)}`,
-							param
-						);
-					}
+		for (const arg of args) {
+			if (required && isParameterEmpty(arg)) {
+				throw new InjectableParamError(`${name}: required`, param);
+			}
+
+			if (validator) {
+				const errMsg = validator(arg, {
+					request,
+					response,
+					def: param,
+				});
+				if (errMsg) {
+					throw new InjectableParamError(`${name}: ${errMsg}`, param);
+				}
+			}
+
+			if (enumValues) {
+				if (!enumValues.includes(arg)) {
+					throw new InjectableParamError(
+						`${name}: got ${arg}; expected: ${JSON.stringify(
+							enumValues
+						)}`,
+						param
+					);
 				}
 			}
 		}
@@ -232,9 +151,13 @@ export const proxyRequestHandlerToRoute = (
 			response,
 			route
 		);
-		applyConstraintsToArgs(paramArgs, request, response, route);
-		return (thisCtx[methodName] as Function)(
-			...[request, response, next, ...paramArgs]
-		);
+		try {
+			applyConstraintsToArgs(paramArgs, request, response, route);
+			return (thisCtx[methodName] as Function)(
+				...[request, response, next, ...paramArgs]
+			);
+		} catch (e) {
+			next(e);
+		}
 	};
 };
