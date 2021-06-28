@@ -1,9 +1,16 @@
 import {DecoratedClassBuilder} from '../decorator';
-import {ControllerConfig, RequestParamConfig, InjectedRequestParam, RouteConfig,} from './types';
+import {
+	ControllerConfig,
+	RequestParamConfig,
+	InjectedRequestParam,
+	RouteConfig,
+	HandlerConfig,
+	HandlerConfigType, MiddlewareConfig, ErrorMiddlewareConfig,
+} from './types';
 
 const collector = new DecoratedClassBuilder<
 	ControllerConfig,
-	RouteConfig,
+	HandlerConfig,
 	InjectedRequestParam
 >();
 
@@ -16,13 +23,21 @@ export const Controller = (params: ControllerConfig = {}) => {
 export const isParameterEmpty = (v: any): boolean =>
 	v === '' || v === undefined || v === null;
 
-/**
- * Modifies the instance method to apply transformation/validation to injectable
- * parameters before original method is called.
- */
 export const Route = (params: RouteConfig) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
-		collector.pushMethod(proto, name, { name, desc, ...params });
+		collector.pushMethod(proto, name, { type: HandlerConfigType.route, name, desc, ...params });
+	};
+};
+
+export const Middleware = (params: MiddlewareConfig = {}) => {
+	return (proto: any, name: string, desc: PropertyDescriptor) => {
+		collector.pushMethod(proto, name, { type: HandlerConfigType.middleware, name, desc, ...params });
+	};
+};
+
+export const ErrorMiddleware = (params: ErrorMiddlewareConfig = {}) => {
+	return (proto: any, name: string, desc: PropertyDescriptor) => {
+		collector.pushMethod(proto, name, { type: HandlerConfigType.error, name, desc, ...params });
 	};
 };
 

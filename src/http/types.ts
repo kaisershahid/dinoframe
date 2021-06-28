@@ -14,19 +14,15 @@ export type BaseDecoratorConfig = {
 	path?: string;
 	methods?: string[];
 	headers?: Record<string, HeaderRecord>;
-	__type?: number;
 };
-
-export enum HandlerConfigType {
-	route = 1,
-	middleware = 2,
-	error = 3,
-}
 
 export type RouteConfig = BaseDecoratorConfig & {
 	path: string;
+	/** @todo unsupported; reconcile with @RequestParam */
 	parameters?: Record<string, ParameterRecord>;
+	/** @todo unsupported */
 	body?: BodyRecord;
+	/** @todo unsupported */
 	response?: ResponseRecord;
 };
 
@@ -34,7 +30,18 @@ export type MiddlewareConfig = BaseDecoratorConfig & {};
 
 export type ErrorMiddlewareConfig = BaseDecoratorConfig & {};
 
+export enum HandlerConfigType {
+	route = 1,
+	middleware = 2,
+	error = 3,
+}
+
+export type HandlerConfig = (RouteConfig|MiddlewareConfig|ErrorMiddlewareConfig) & {
+	type: HandlerConfigType
+}
+
 export type ControllerConfig = BaseDecoratorConfig & {
+	/** @todo unsupported */
 	deserializer?: any;
 };
 

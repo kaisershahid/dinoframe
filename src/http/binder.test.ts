@@ -1,4 +1,9 @@
-import {AllowedHandler, HttpDecoratorsBinder, proxyRequestHandlerToRoute} from './binder';
+import {
+	AllowedHandler,
+	HttpDecoratorsBinder,
+	makeErrorHandlerProxyToController,
+	makeRequestHandlerProxyToController
+} from './binder';
 import {createContainer} from 'awilix';
 import {getHttpAnnotations} from './decorators';
 import {ExampleController} from './__fixtures/example-controller';
@@ -10,6 +15,7 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 	const annotations = getHttpAnnotations();
 	const binder = new HttpDecoratorsBinder(container, annotations);
 	const boundList: AllowedHandler[] = [];
+	const controller = new ExampleController();
 
 	it('binds handlers in priority order', () => {
 		const orderedPaths: string[] = [];
@@ -29,6 +35,10 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 
 	const request = { query: {} } as Request;
 	const response = {} as Response;
+	let err: any;
+	const next = (e?: any) => {
+		err = e;
+	};
 
 	it('correctly executes /p1Enum', () => {
 		let err: any;
@@ -40,24 +50,12 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 		expect(err.message).toEqual('p1: got undefined; expected: ["1","2"]');
 	});
 
-	describe('#proxyRequestHandlerToRoute() using ExampleController', () => {
-		const annotations = getHttpAnnotations();
-		const controller = new ExampleController();
-		const request = {
-			query: {},
-		} as Request;
-		const response = {} as Response;
-
-		let err: any;
-		const next = (e?: any) => {
-			err = e;
-		};
-
+	describe('#makeRequestHandlerProxyToController() using ExampleController', () => {
 		beforeEach(() => {
 			err = undefined;
 		});
 
-		const p1Injected = proxyRequestHandlerToRoute(
+		const p1Injected = makeRequestHandlerProxyToController(
 			controller,
 			'p1Injected',
 			annotations[0].methods['p1Injected']
@@ -69,7 +67,7 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 			expect(val).toEqual('hello');
 		});
 
-		const p1Required = proxyRequestHandlerToRoute(
+		const p1Required = makeRequestHandlerProxyToController(
 			controller,
 			'p1Required',
 			annotations[0].methods['p1Required']
@@ -81,7 +79,7 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 			expect(err.message).toEqual('p1: required');
 		});
 
-		const p1Enum = proxyRequestHandlerToRoute(
+		const p1Enum = makeRequestHandlerProxyToController(
 			controller,
 			'p1Enum',
 			annotations[0].methods['p1Enum']
@@ -95,7 +93,7 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 			expect(err.message).toEqual(`p1: got 3; expected: ["1","2"]`);
 		});
 
-		const p1ValidatorTransformer = proxyRequestHandlerToRoute(
+		const p1ValidatorTransformer = makeRequestHandlerProxyToController(
 			controller,
 			'p1ValidatorTransformer',
 			annotations[0].methods['p1ValidatorTransformer']
@@ -112,5 +110,32 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 			p1ValidatorTransformer(request, response, next);
 			expect(err.message).toEqual('p1: err set');
 		});
+
+
+	});
+
+	describe('#makeErrorHandlerProxyToController', function () {
+		beforeEach(() => {
+			err = undefined;
+		});
+
+		const errorHandler = makeErrorHandlerProxyToController(
+			controller,
+			'errorHandler',
+			annotations[0].methods['errorHandler']
+		);
+
+		it('has 4 args', () => {
+			expect(errorHandler.length).toEqual(4);
+		})
+
+		it('extracts and transforms params without validation', () => {
+			request.query = {p1: 'hi'};
+			const ret = errorHandler('error!', request, response, next);
+			expect(ret).toEqual({
+				err: 'error!',
+				p1: 'hi!'
+			})
+		})
 	});
 });
