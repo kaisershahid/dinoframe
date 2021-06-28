@@ -3,7 +3,7 @@
 	"scripts": {
 		"exec": "ts-node src/index.ts",
 		"distexec": "ts-node dist/index.js",
-		"test": " --require ts-node/register '{src,tests}/**/*.test.ts'",
+		"test": "--reporters=\"default\" --require ts-node/register '{src,tests}/**/*.test.ts'",
 		"prepack": "npx webpack",
 		"release": "source release.sh"
 	},

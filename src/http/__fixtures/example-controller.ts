@@ -1,6 +1,7 @@
 import { Controller, RequestParam, Route } from '../decorators';
 
 @Controller({
+	id: 'test.ExampleController',
 	path: '/prefix',
 	methods: ['PUT'],
 })

@@ -1,18 +1,38 @@
-import { Request, Response } from 'express';
-import { readFileSync } from 'fs';
-import { getHttpAnnotations} from './decorators';
-import { ExampleController } from './__fixtures/example-controller';
-import {proxyRequestHandlerToRoute} from "./binder";
+import {readFileSync} from 'fs';
+import {getHttpAnnotations} from './decorators';
+import {ExampleController} from "./__fixtures/example-controller";
 
-describe('module: http.decorator', () => {
-	it('collects expected metadata for ExampleController', () => {
-		// @todo static gid in json may change as annotated controllers grow -- need more agnostic check
-		const http = getHttpAnnotations();
-		const JSON_ANNOTATIONS = readFileSync(
-			`${__dirname}/__fixtures/example-controller.json`
-		).toString();
-		expect(JSON.parse(JSON_ANNOTATIONS)).toMatchObject(
-			JSON.parse(JSON.stringify(http[0]))
-		);
-	});
+describe('module: http.decorator: verification of ExampleController', () => {
+    ExampleController.discover();
+	const annotations = getHttpAnnotations()[0];
+
+	it('processes @Controller', () => {
+        expect(annotations.metadata[0]).toEqual({
+            id: 'test.ExampleController',
+            path: '/prefix',
+            methods: ['PUT'],
+        })
+    });
+
+	it('processes @Route', () => {
+        const routes = Object.keys(annotations.methods);
+        expect(routes.includes('doGet')).toBeTruthy();
+        expect(routes.includes('p1Injected')).toBeTruthy();
+        expect(routes.includes('p1Required')).toBeTruthy();
+        expect(routes.includes('p1Enum')).toBeTruthy();
+        expect(routes.includes('p1ValidatorTransformer')).toBeTruthy();
+    });
+
+	it('processes @RequestParam', () => {
+	    const params = annotations.methods['p1ValidatorTransformer'].parameters;
+	    const p1 = params[3][0];
+	    const {method,pos,name} = p1;
+	    expect({method,pos,name}).toEqual({
+            method: 'p1ValidatorTransformer',
+            pos: 3,
+            name: 'p1'
+        })
+        expect(typeof p1.validator).toEqual('function')
+        expect(typeof p1.transformer).toEqual('function')
+    })
 });
