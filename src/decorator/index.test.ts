@@ -1,5 +1,5 @@
-import { DecoratedClassBuilder } from './index';
-import { getOrMakeGidForConstructor, GidEnabledClass } from './registry';
+import {DecoratedClassBuilder} from './index';
+import {getOrMakeGidForConstructor, GidEnabledClass} from './registry';
 import exp = require("constants");
 
 type ClassMeta = {
@@ -51,13 +51,25 @@ const MethodDecorator = (params: { validate: boolean }) => {
 	};
 };
 
+const MethodDecorator2 = (proto: any, name: string, desc: PropertyDescriptor) => {
+	collector.pushMethod(proto, name, { name, desc, validate: false });
+};
+
 const PropertyDecorator = () => {
-	return (proto: any, name: string, desc?: any) => {};
+	return (proto: any, name: string, desc?: any) => {
+		collector.pushProperty(proto, name, {desc});
+	};
 };
 
 const ParameterDecorator = (params: { matchRegex: RegExp }) => {
 	return (proto: any, method: string, pos: number) => {
 		collector.pushParameter(proto, method, pos, { pos, ...params });
+	};
+};
+
+const ParameterDecorator2 = () => {
+	return (proto: any, method: string, pos: number) => {
+		collector.pushParameter(proto, method, pos, { pos, matchRegex: /-/ });
 	};
 };
 
@@ -78,7 +90,25 @@ class Example {
 }
 
 @ClassDecorator({ name: 'Example2' })
-class Example2 {}
+class Example2 {
+	private _x:boolean;
+	private _y:boolean;
+
+	constructor(props) {
+		this._x = false;
+		this._y = true;
+	}
+
+	@MethodDecorator2
+	get x() {
+		return this._x;
+	}
+
+	@MethodDecorator2
+	get y() {
+		return this._y;
+	}
+}
 
 describe('module: decorator', () => {
 	describe('DecoratedClassBuilder', () => {
@@ -94,13 +124,17 @@ describe('module: decorator', () => {
 			).toEqual(/hello/);
 			expect(record.staticMethods['method2']).not.toBeUndefined();
 			expect(record.staticMethods['method2'].metadata[0].validate).toEqual(false);
+
+			expect(record.properties['prop1']).not.toBeUndefined();
 		});
 
 		it('processes Example2', () => {
 			const record = finalized[1];
 			expect(record.gid).toEqual('2');
 			expect(record.metadata[0].name).toEqual('Example2');
-			expect(Object.keys(record.methods).length).toEqual(0);
+			expect(Object.keys(record.methods).length).toEqual(2);
+			expect(record.methods['x']).not.toBeUndefined();
+			expect(record.methods['y']).not.toBeUndefined();
 			expect(Object.keys(record.properties).length).toEqual(0);
 		});
 	});

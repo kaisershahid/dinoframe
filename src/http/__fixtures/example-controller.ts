@@ -73,6 +73,11 @@ export class ExampleController {
         return {err, p1};
     }
 
+    @Route({path: '/static'})
+    static staticRoute(request, response, next) {
+
+    }
+
     static discover() {
     }
 }

@@ -47,6 +47,7 @@ export type DecoratedClass<
 	methods: Record<string, DecoratedMethod<Method, Parameter>>;
 	staticMethods: Record<string, DecoratedMethod<Method, Parameter>>;
 	properties: Record<string, Property[]>;
+	staticProperties: Record<string, Property[]>;
 };
 
 // @todo globalDecoratedClass
@@ -69,6 +70,7 @@ export const getEmptyDecoratedClass = <
 		methods: {},
 		staticMethods: {},
 		properties: {},
+		staticProperties: {},
 	};
 };
 
@@ -94,6 +96,21 @@ export class DecoratedClassBuilder<
 
 	private finalized: DecoratedClass[] = [];
 	private finalizedCalled = false;
+
+	initProperty(name: string, isStatic: boolean, metadata: Property) {
+		const target = isStatic ? this.cur.staticProperties : this.cur.properties;
+		if (!target[name]) {
+			target[name] = [];
+		}
+
+		target[name].push(metadata);
+	}
+
+	pushProperty(proto: any, name: string, metadata: Property) {
+		const isStatic = !!proto.prototype;
+		this.checkProto(proto);
+		this.initProperty(name, isStatic, metadata);
+	}
 
 	initMethod(name: string, isStatic: boolean) {
 		const target = isStatic ? this.cur.staticMethods : this.cur.methods;

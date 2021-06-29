@@ -28,6 +28,8 @@ describe('module: http.binder: HttpDecoratorsBinder', () => {
 			'/prefix/p1-enum',
 			'/prefix/p1-validator-transformer',
 			'/prefix/p1-required',
+			undefined, // middleware/errorMiddleware
+			undefined, // middleware/errorMiddleware
 			'/prefix/get',
 			'/prefix/p1-injected',
 		]);
