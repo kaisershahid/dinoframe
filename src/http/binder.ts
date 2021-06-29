@@ -236,7 +236,7 @@ export class HttpDecoratorsBinder {
                     if (!headers) {
                         headers = {...defaultHeaders};
                     }
-                    path = `${pathPrefix}${path}`;
+                    path = type === HandlerConfigType.error ? undefined : path ? `${pathPrefix}${path}` : undefined;
                     priority = priority ?? 0;
                     const bound = type === HandlerConfigType.error
                         ? makeErrorHandlerProxyToController(inst, methodName, methodDecorators)
