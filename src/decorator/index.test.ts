@@ -1,6 +1,6 @@
-import exp from 'constants';
 import { DecoratedClassBuilder } from './index';
 import { getOrMakeGidForConstructor, GidEnabledClass } from './registry';
+import exp = require("constants");
 
 type ClassMeta = {
 	name: string;
@@ -71,6 +71,10 @@ class Example {
 
 	@PropertyDecorator()
 	prop1 = 5;
+
+	@MethodDecorator({validate: false})
+	static method2() {
+	}
 }
 
 @ClassDecorator({ name: 'Example2' })
@@ -88,6 +92,8 @@ describe('module: decorator', () => {
 			expect(
 				record.methods['method1'].parameters[0][0].matchRegex
 			).toEqual(/hello/);
+			expect(record.staticMethods['method2']).not.toBeUndefined();
+			expect(record.staticMethods['method2'].metadata[0].validate).toEqual(false);
 		});
 
 		it('processes Example2', () => {

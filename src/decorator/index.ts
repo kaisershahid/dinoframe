@@ -45,8 +45,11 @@ export type DecoratedClass<
 	clazz: any;
 	metadata: Clazz[];
 	methods: Record<string, DecoratedMethod<Method, Parameter>>;
+	staticMethods: Record<string, DecoratedMethod<Method, Parameter>>;
 	properties: Record<string, Property[]>;
 };
+
+// @todo globalDecoratedClass
 
 /**
  * Generates an empty structure with given gid.
@@ -64,6 +67,7 @@ export const getEmptyDecoratedClass = <
 		clazz: undefined,
 		metadata: [],
 		methods: {},
+		staticMethods: {},
 		properties: {},
 	};
 };
@@ -91,9 +95,10 @@ export class DecoratedClassBuilder<
 	private finalized: DecoratedClass[] = [];
 	private finalizedCalled = false;
 
-	initMethod(name: string) {
-		if (!this.cur.methods[name]) {
-			this.cur.methods[name] = {
+	initMethod(name: string, isStatic: boolean) {
+		const target = isStatic ? this.cur.staticMethods : this.cur.methods;
+		if (!target[name]) {
+			target[name] = {
 				metadata: [],
 				parameters: [],
 			};
@@ -101,13 +106,18 @@ export class DecoratedClassBuilder<
 	}
 
 	pushMethod(proto: any, name: string, metadata: Method) {
+		const isStatic = !!proto.prototype;
 		this.checkProto(proto);
-		this.initMethod(name);
-		this.cur.methods[name].metadata.push({ ...metadata });
+		this.initMethod(name, isStatic);
+		if (isStatic) {
+			this.cur.staticMethods[name].metadata.push({ ...metadata });
+		} else {
+			this.cur.methods[name].metadata.push({ ...metadata });
+		}
 	}
 
-	initParameter(methodName: string, pos: number) {
-		this.initMethod(methodName);
+	initParameter(methodName: string, pos: number, isStatic: boolean) {
+		this.initMethod(methodName, isStatic);
 		if (!this.cur.methods[methodName].parameters[pos]) {
 			this.cur.methods[methodName].parameters[pos] = [];
 		}
@@ -119,8 +129,9 @@ export class DecoratedClassBuilder<
 		pos: number,
 		metadata: Parameter
 	) {
+		const isStatic = !!proto.prototype;
 		this.checkProto(proto);
-		this.initParameter(methodName, pos);
+		this.initParameter(methodName, pos, isStatic);
 		this.cur.methods[methodName].parameters[pos].push(metadata);
 	}
 
