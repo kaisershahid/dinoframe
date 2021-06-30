@@ -4,14 +4,14 @@ import {
 	makeErrorHandlerProxyToController,
 	makeRequestHandlerProxyToController
 } from './binder';
-import {createContainer} from 'awilix';
 import {getHttpAnnotations} from './decorators';
 import {ExampleController} from './__fixtures/example-controller';
 import {Request, RequestHandler, Response,} from 'express';
+import {ServiceContainer} from "../service-container";
 
 describe('module: http.binder: HttpDecoratorsBinder', () => {
 	ExampleController.discover();
-	const container = createContainer();
+	const container = new ServiceContainer();
 	const annotations = getHttpAnnotations();
 	const binder = new HttpDecoratorsBinder(container, annotations);
 	const boundList: AllowedHandler[] = [];
