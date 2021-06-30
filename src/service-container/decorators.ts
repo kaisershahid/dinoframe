@@ -1,14 +1,19 @@
-import {DecoratedClassBuilder} from "../decorator";
-import {BaseServiceMeta, DependencyMeta, MethodInvoker, MethodType, ServiceMeta} from "./types";
+import {
+    BaseServiceMeta,
+    ClassServiceMetadata, DecoratedServiceRecord,
+    DependencyMeta,
+    getServiceMetadataBuilder,
+    MethodType,
+    ServiceRecord,
+    ServiceState
+} from "./types";
+import {getOrMakeGidForConstructor} from "../decorator/registry";
 
-const collector = new DecoratedClassBuilder<
-    ServiceMeta,
-    MethodInvoker,
-    DependencyMeta>();
+const collector = getServiceMetadataBuilder();
 
 export const Service = (id: string, meta: BaseServiceMeta = {}) => {
     return (clazz: any) => {
-        collector.pushClass(clazz, {id, ...meta})
+        collector.pushClass(clazz, {id, gid: getOrMakeGidForConstructor(clazz), ...meta})
     }
 }
 
@@ -39,7 +44,8 @@ export const Deactivate = (target: any, name: string, desc: PropertyDescriptor) 
  * Class -- defines a dependency as service id or 1+ interfaces to match.
  * @todo support
  */
-export const Dependency = (params: DependencyMeta) => {}
+export const Dependency = (params: DependencyMeta) => {
+}
 
 /**
  * Parameter (extends behavior of @Dependency) --  injects dependency into argument
@@ -51,9 +57,15 @@ export const Inject = (params: DependencyMeta) => {
 }
 
 // todo
-export const ServiceProvider = () => {}
+export const ServiceProvider = () => {
+}
 
 // todo
-export const ScopedServiceFactory = () => {}
+export const ScopedServiceFactory = () => {
+}
 
-
+export const getDecoratedServiceRecords = () => {
+    return collector.getFinalized().map((meta) => {
+        return new DecoratedServiceRecord(meta)
+    })
+}

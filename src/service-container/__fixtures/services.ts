@@ -32,20 +32,21 @@ export class GobTheMagician implements Actor {
     }
 }
 
-@Service('manager', {
+@Service('agent', {
     priority: -1 // ensures actors load first
 })
-export class Manager {
+export class Agent {
     actors: Actor[] = [];
     rollCall: string[] = [];
 
-    setActors(@Inject({interfaces: ['actor']}) actors) {
+    setActors(@Inject({matchInterface: 'actor', matchCriteria: {min: 2}}) actors: Actor[]) {
+        console.log('actors >> ', actors);
         this.actors = actors;
     }
 
     @Activate
     activate() {
-        this.rollCall = this.actors.map(actor => `my name is ${actor.getName()} and i'm a ${actor.getRole()}`)
+        console.log('ACTIVATe!!')
     }
 
     @Deactivate
@@ -55,6 +56,9 @@ export class Manager {
     }
 
     getRoleCall() {
-        return [...this.rollCall]
+        return this.actors.map(actor => `my name is ${actor.getName()} and i'm a ${actor.getRole()}`);
+    }
+
+    static discover() {
     }
 }
