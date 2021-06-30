@@ -42,9 +42,11 @@ export const Deactivate = (target: any, name: string, desc: PropertyDescriptor) 
 
 /**
  * Class -- defines a dependency as service id or 1+ interfaces to match.
- * @todo support
  */
 export const Dependency = (params: DependencyMeta) => {
+    return (target: any) => {
+        // @todo need a more parameterized way to insert different types of same rec class
+    }
 }
 
 /**
@@ -56,12 +58,11 @@ export const Inject = (params: DependencyMeta) => {
     }
 }
 
-// todo
-export const ServiceProvider = () => {
-}
-
-// todo
-export const ScopedServiceFactory = () => {
+/**
+ * Class -- marks a service as a factory for creating scoped instances.
+ * @todo
+ */
+export const ServiceFactory = (id) => {
 }
 
 export const getDecoratedServiceRecords = () => {

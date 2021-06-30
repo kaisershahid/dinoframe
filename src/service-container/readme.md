@@ -1,7 +1,7 @@
 # Service Container
 
 ```typescript
-import {Service, Activate, Deactivate, Inject, Factory} from "./decorators";
+import {Service, Activate, Deactivate, Inject, Factory, ServiceFactory} from "./decorators";
 
 @Service('exampleService', {
     // optional; interfaces exposed by service (1:many) -- provides simple IoC.
@@ -54,6 +54,22 @@ class ExampleService {
 
     codecMpg(url: string, stream: any) {
         // fetch url and encode to stream
+    }
+}
+
+// get/create an instance using `id@factory.id` -- if container sees `@`, it assumes everything
+// to the right references a service factory, and will pass `id` to the getter.
+@ServiceFactory("factory.id", {
+    interfaces: ['logger.logger']
+})
+class ExampleServiceFactory {
+    private cache: Record<string, any> = {};
+    get(id: string) {
+        if (!this.cache[id]) {
+            this.cache[id] = new Instance();
+        }
+        
+        return this.cache[id]
     }
 }
 ```

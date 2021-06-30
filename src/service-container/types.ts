@@ -65,15 +65,10 @@ export type ServiceProviderMeta = {}
 
 export type ScopedFactoryServiceMeta = {};
 
-export type ClassServiceMetadata = DecoratedClass<ServiceMeta,
-    MethodInvoker,
-    any,
-    DependencyMeta>;
+export type ClassServiceMetadata = DecoratedClass<ServiceMeta, MethodInvoker, DependencyMeta>;
 
 export const getServiceMetadataBuilder = () => {
-    return new DecoratedClassBuilder<ServiceMeta,
-        MethodInvoker,
-        DependencyMeta>();
+    return new DecoratedClassBuilder<ServiceMeta, MethodInvoker, DependencyMeta>();
 }
 
 /**

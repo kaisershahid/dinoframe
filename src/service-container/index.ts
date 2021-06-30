@@ -7,11 +7,15 @@ import {
     ServiceState
 } from "./types";
 
+/**
+ * Keeps track of an individual service's dependencies. Await `ServiceTracker.promise` to
+ * get notified of start (returns the service id).
+ */
 export class ServiceTracker {
     id: string;
     depServices: Record<string,any> = {};
     depInterfaces: Record<string,any> = {};
-    promise: Promise<any>;
+    promise: Promise<string>;
     resolve: (value?: (PromiseLike<any> | any)) => void = (v) => {};
     reject: (reason?: any) => void = (v) => {};
 
@@ -28,6 +32,10 @@ export class ServiceTracker {
     }
 }
 
+
+/**
+ * Manages dependency tracking for entire container.
+ */
 export class DependencyTracker {
     /**
      * key: the serviceId required; value: a map of serviceIds waiting
