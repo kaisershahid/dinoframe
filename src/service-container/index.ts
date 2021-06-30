@@ -1,8 +1,8 @@
-import {asFunction, AwilixContainer, createContainer} from "awilix";
 import {
-    ClassServiceMetadata,
-    DecoratedServiceRecord, DependencyMeta, InjectableList,
-    ServiceContainer,
+    DecoratedServiceRecord,
+    DependencyMeta,
+    InjectableList,
+    Container,
     ServiceRecord,
     ServiceState
 } from "./types";
@@ -32,6 +32,8 @@ export class ServiceTracker {
     }
 }
 
+export const canActivateService = (status: ServiceState) => status < ServiceState.activating || status > ServiceState.deactivating
+export const canDeactivateService = (status: ServiceState) => status == ServiceState.activated;
 
 /**
  * Manages dependency tracking for entire container.
@@ -113,9 +115,9 @@ export class DependencyTracker {
 
     bindToInterface(interfaze: string, dependentId: string, depMeta: DependencyMeta) {
         const min = depMeta.matchCriteria?.min === undefined ? 1 :depMeta.matchCriteria.min
-        console.log('?bindToInterface', {interfaze,dependentId,min})
+        // console.log('?bindToInterface', {interfaze,dependentId,min})
         if ((this.interfaceCount[interfaze]??0) < min) {
-            console.log('--> waiting')
+            // console.log('--> waiting')
             this.waitOnInterface(interfaze, dependentId, depMeta);
         }
     }
@@ -127,22 +129,28 @@ export class DependencyTracker {
     }
 }
 
-export class ServiceContainerWrapper implements ServiceContainer {
-    private container: AwilixContainer<any>;
+export class ServiceContainer implements Container {
     private records: ServiceRecord[] = [];
     private instances: Record<string, any> = {};
     private recordsById: Record<string, number> = {};
     private recordsByGid: Record<string, number> = {};
     private interfaceToRec: Record<string, number[]> = {};
     private started: boolean = false;
-    private depTracker = new DependencyTracker();
+    private depTracker: DependencyTracker = new DependencyTracker();
 
-    constructor(container?: AwilixContainer) {
-        this.container = container ?? createContainer();
+    constructor(initialRecords: DecoratedServiceRecord[] = []) {
+        initialRecords.forEach(r => this.register(r));
+    }
+
+    has(id: string) {
+        return this.instances[id] !== undefined;
     }
 
     resolve<T extends any = any>(id: string): T {
-        return this.container.resolve<T>(id);
+        if (!this.has(id)) {
+            throw new Error(`${id}: service not found`); // @todo specific error
+        }
+        return this.instances[id] as T;
     }
 
     query<T extends any = any>(matchInterface: string): T[] {
@@ -153,8 +161,8 @@ export class ServiceContainerWrapper implements ServiceContainer {
         this.interfaceToRec[matchInterface]
             .forEach(idx => {
                 const id = this.records[idx].id;
-                if (this.container.has(id)) {
-                    services.push(this.container.resolve(id))
+                if (this.has(id)) {
+                    services.push(this.resolve(id))
                 }
             });
         // @todo support matchCriteria and only return if services satisfies it
@@ -182,7 +190,7 @@ export class ServiceContainerWrapper implements ServiceContainer {
         }
     }
 
-    async startup(): Promise<ServiceContainer> {
+    async startup(): Promise<Container> {
         if (this.started) {
             return this;
         }
@@ -193,14 +201,11 @@ export class ServiceContainerWrapper implements ServiceContainer {
 
         const promises: Promise<any>[] = [];
         for (const rec of recs) {
-            console.log('starting init', rec.id, rec);
+            if (rec.disabled || !canActivateService(rec.status)) { continue; }
+            // console.log('starting init', rec.id, rec);
             promises.push(this.initServiceFromRecord(rec).then(inst => {
                 rec.status = ServiceState.activated;
-                console.log(`activated: ${rec.id}`)
-                this.container.register(rec.id, asFunction(() => inst).disposer(() => {
-                    // @todo invoke shutdown on service
-                }));
-
+                // console.log(`activated: ${rec.id}`)
                 const notifyServices = this.depTracker.serviceAvailable(rec.id);
                 const interfaces: string[] = [];
                 const notifyInterfaces = rec.interfaces
@@ -212,10 +217,12 @@ export class ServiceContainerWrapper implements ServiceContainer {
                 this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
                 // @todo notify subscribers for interfaces
 
-                console.log(`>> service activated: ${rec.id}`)
-                // @todo wake up dependents
+                // console.log(`>> service activated: ${rec.id}`)
             }))
         }
+
+        // @todo need audit trail of service start/stop
+        // @todo need dashboard data for all services
 
         this.started = true;
         await Promise.all(promises);
@@ -245,7 +252,7 @@ export class ServiceContainerWrapper implements ServiceContainer {
 
         const st = this.depTracker.getTracker(rec.id);
         if (st.isSatisfied()) {
-            console.log('! satisfied:', rec.id);
+            // console.log('! satisfied:', rec.id);
             st.resolve(rec.id);
         }
 
@@ -259,14 +266,30 @@ export class ServiceContainerWrapper implements ServiceContainer {
             visited[depId] = true;
             const st = this.depTracker.getTracker(depId);
             if (st.isSatisfied()) {
-                console.log(`@ satisfied: ${depId}`)
+                // console.log(`@ satisfied: ${depId}`)
                 st.resolve(depId);
             }
         }
     }
 
-    shutdown(): Promise<ServiceContainer> {
-        throw new Error()
+    async shutdown(): Promise<Container> {
+        if (!this.started) {
+            throw new Error('serviceContainer not started');
+        }
+
+        const promises: Promise<any>[] = [];
+        for (const rec of this.records) {
+            if (rec.disabled || canDeactivateService(rec.status)) { continue; };
+            promises.push(this.deactivateService(rec, this.instances[rec.id]).catch(e => {
+                console.error(`failed to successfully deactivate: ${rec.id}`, e);
+            }).finally(() => {
+                delete this.instances[rec.id];
+                rec.status = ServiceState.deactivated;
+            }));
+        }
+
+        this.started = false;
+        return this;
     }
 
     protected makeInstance(rec: ServiceRecord): any {
@@ -289,7 +312,7 @@ export class ServiceContainerWrapper implements ServiceContainer {
             if (!dep) {
                 return;
             } else if (dep.id) {
-                return this.container.resolve(dep.id);
+                return this.resolve(dep.id);
             } else if (dep.matchInterface) {
                 const svcs = this.query(dep.matchInterface);
                 return svcs;
@@ -300,7 +323,14 @@ export class ServiceContainerWrapper implements ServiceContainer {
 
     protected async activateService(rec: ServiceRecord, inst: any) {
         if (rec.activator) {
-            return Promise.resolve(inst[rec.activator])
+            return Promise.resolve(inst[rec.activator]())
+        }
+    }
+
+    protected async deactivateService(rec: ServiceRecord, inst: any) {
+        // @todo deactivate dependents of rec.id
+        if (rec.deactivator) {
+            return Promise.resolve(inst[rec.deactivator]())
         }
     }
 }

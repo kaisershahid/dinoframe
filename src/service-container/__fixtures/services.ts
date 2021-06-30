@@ -20,15 +20,29 @@ export class TobiasTheActor implements Actor {
 }
 
 @Service('gob', {
-    interfaces: ['actor']
+    interfaces: ['actor'],
+    priority: 100
 })
 export class GobTheMagician implements Actor {
+    activated = false;
+
     getName() {
-        return 'gob';
+        return `gob ${this.activated ? 'wake' : 'sleep'}`;
     }
 
     getRole() {
         return 'magician';
+    }
+
+    @Activate
+    activate() {
+        console.log("!!! activatng");
+        this.activated = true;
+    }
+
+    @Deactivate
+    deactivate() {
+        this.activated = false;
     }
 }
 
@@ -40,13 +54,7 @@ export class Agent {
     rollCall: string[] = [];
 
     setActors(@Inject({matchInterface: 'actor', matchCriteria: {min: 2}}) actors: Actor[]) {
-        console.log('actors >> ', actors);
         this.actors = actors;
-    }
-
-    @Activate
-    activate() {
-        console.log('ACTIVATe!!')
     }
 
     @Deactivate

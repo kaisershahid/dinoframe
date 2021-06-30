@@ -1,5 +1,7 @@
 # Service Container
 
+This module provides a powerful, declarative way to create and manage services and frees you from all but the most minimal glue code (usually, a one-liner into the root service/module you want to register). See `index.test.ts` for how easy it is to start up the service container with example classes.
+
 ```typescript
 import {Service, Activate, Deactivate, Inject, Factory, ServiceFactory} from "./decorators";
 
@@ -57,8 +59,10 @@ class ExampleService {
     }
 }
 
-// get/create an instance using `id@factory.id` -- if container sees `@`, it assumes everything
-// to the right references a service factory, and will pass `id` to the getter.
+// get/create an instance using `id@factory.id` -- if container sees `@`, it assumes 
+// everything to the right references a service factory, and will pass `id` to the
+// getter. this essentially treats the factory as a specialized container. use this
+// to manage things like logger instances.
 @ServiceFactory("factory.id", {
     interfaces: ['logger.logger']
 })
@@ -78,9 +82,10 @@ class ExampleServiceFactory {
 ## Todos
 
 - [ ] define general flow of service management/injection
-- [ ] define `ServiceContainer`
-- [-] define `@Service`, `@Activate`, `@Deactivate`, `@Factory`
-- [ ] define `@Dependency`
-- [-] define `@Inject`
-- [ ] define `@ServiceProvider`
-- [ ] define `@ScopedFactoryService`
+- [x] define `ServiceContainer`
+- [x] define `@Service` (class), `@Activate` (method), `@Deactivate` (method), `@Factory` (method)
+- [ ] define `@Dependency` (class)
+- [x] define `@Inject` (method)
+- [ ] define `@ServiceFactory` (class)
+- [ ] define `@Config` (class)
+- [ ] define `@Subscribe` (method) -- receives notification for container events (e.g. specific service started, service advertising an interface started/deactivating, etc)

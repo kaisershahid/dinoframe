@@ -12,17 +12,15 @@
 	"main": "dist/src/index.js",
 	"types": "dist/src/index.d.ts",
 	"dependencies": {
-		"awilix": "^4.3.4",
 		"ts-node": "^8.8.2",
-		"typescript": "^3.8.3"
+		"typescript": "^3.8.3",
+		"express": "^4.17.1"
 	},
 	"devDependencies": {
-		"@types/exif": "^0.6.1",
 		"@types/express": "^4.17.12",
 		"@types/jest": "^26.0.23",
 		"@types/node": "^13.11.0",
 		"awesome-typescript-loader": "^5.2.1",
-		"express": "^4.17.1",
 		"jest": "^27.0.5",
 		"prettier": "^2.0.5",
 		"ts-jest": "^27.0.3"

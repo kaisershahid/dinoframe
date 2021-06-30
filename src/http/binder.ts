@@ -1,4 +1,3 @@
-import {AwilixContainer} from 'awilix';
 import {ErrorRequestHandler, Request, RequestHandler, Response} from 'express';
 import {DecoratedClass, DecoratedMethod} from '../decorator';
 import {isParameterEmpty} from './decorators';
@@ -11,6 +10,7 @@ import {
     RequestParamConfig,
     RequestParamError,
 } from './types';
+import {ServiceContainer} from "../service-container";
 
 export const SVC_HTTP_DEFAULT = 'http.server';
 
@@ -189,13 +189,13 @@ export const makeErrorHandlerProxyToController = (
  * 2. generate a request handler that proxies incoming request to controller (with expanded args)
  */
 export class HttpDecoratorsBinder {
-    container: AwilixContainer<any>;
+    container: ServiceContainer;
     controllers: DecoratedClass<ControllerConfig,
         HandlerConfig,
         RequestParamConfig,
         any>[];
 
-    constructor(container: AwilixContainer, controllers: DecoratedClass[]) {
+    constructor(container: ServiceContainer, controllers: DecoratedClass[]) {
         this.container = container;
         this.controllers = [...controllers];
     }

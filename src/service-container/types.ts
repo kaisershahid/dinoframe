@@ -14,8 +14,10 @@ export type ServiceMeta = BaseServiceMeta & {
 
 export enum ServiceState {
     registered = 0,
-    activated = 32,
-    deactivated = 64
+    activating = 11,
+    activated = 20,
+    deactivating = 21,
+    deactivated = 30
 }
 
 export type InjectableList = (DependencyMeta | undefined)[];
@@ -23,6 +25,7 @@ export type InjectableList = (DependencyMeta | undefined)[];
 export type ServiceRecord = {
     id: string;
     gid: string;
+    disabled?: boolean;
     priority: number;
     interfaces: string[];
     clazz: any;
@@ -134,15 +137,27 @@ export class DecoratedServiceRecord implements ServiceRecord {
     }
 }
 
-export interface ServiceContainer {
+export interface Container {
+    /** Checks if a service has been registered. */
+    has(id: string): boolean;
+    /** Retrieve a service by id. Throws error if not found. */
     resolve<T extends any = any>(id: string): T;
-
+    /** Retrieve many services conforming to query. */
     query<T extends any = any>(matchInterface: string): T[];
-
-    startup(): Promise<ServiceContainer>;
-
-    shutdown(): Promise<ServiceContainer>;
-
+    /**
+     * Initializes services and resolves dependencies. Expectation is that all non-disabled
+     * services must start before promise is resolved. Future improvements will allow for return
+     * on partial start. */
+    startup(): Promise<Container>;
+    /**
+     * Stops all services. Expectation is that dependents on a service will be recursively shutdown
+     * before a specific service is shutdown, and that any shutdown errors will only be logged but
+     * not prevent shutdown.
+     */
+    shutdown(): Promise<Container>;
+    /**
+     * Advertise a service record to container for [immediate] startup.
+     */
     register(metadata: DecoratedServiceRecord);
 
     // unregister(id: string);
