@@ -1,6 +1,7 @@
 import {readFileSync} from 'fs';
 import {getHttpAnnotations} from './decorators';
 import {ExampleController} from "./__fixtures/example-controller";
+import {RecordType} from "../decorator";
 
 describe('module: http.decorator: verification of ExampleController', () => {
     ExampleController.discover();
@@ -8,6 +9,9 @@ describe('module: http.decorator: verification of ExampleController', () => {
 
 	it('processes @Controller', () => {
         expect(annotations.metadata[0]).toEqual({
+            _type: RecordType.clazz,
+            _provider: 'http',
+            _decorator: 'Controller',
             id: 'test.ExampleController',
             path: '/prefix',
             methods: ['PUT'],

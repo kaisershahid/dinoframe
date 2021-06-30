@@ -13,7 +13,7 @@ const collector = getServiceMetadataBuilder();
 
 export const Service = (id: string, meta: BaseServiceMeta = {}) => {
     return (clazz: any) => {
-        collector.pushClass(clazz, {id, gid: getOrMakeGidForConstructor(clazz), ...meta})
+        collector.pushClass(clazz, {id, gid: getOrMakeGidForConstructor(clazz), ...meta}, 'Service')
     }
 }
 
@@ -22,7 +22,7 @@ export const Service = (id: string, meta: BaseServiceMeta = {}) => {
  * if you need to inject dependencies via constructor.
  */
 export const Factory = (target: any, name: string, desc: PropertyDescriptor) => {
-    collector.pushMethod(target, name, {type: MethodType.factory, name});
+    collector.pushMethod(target, name, {type: MethodType.factory, name}, 'Factory');
 }
 
 /**
@@ -30,14 +30,14 @@ export const Factory = (target: any, name: string, desc: PropertyDescriptor) => 
  * dependents.
  */
 export const Activate = (target: any, name: string, desc: PropertyDescriptor) => {
-    collector.pushMethod(target, name, {type: MethodType.activate, name});
+    collector.pushMethod(target, name, {type: MethodType.activate, name}, 'Activate');
 }
 
 /**
  * Method -- invoked on shutdown. error is logged as error; does not block dependents.
  */
 export const Deactivate = (target: any, name: string, desc: PropertyDescriptor) => {
-    collector.pushMethod(target, name, {type: MethodType.deactivate, name});
+    collector.pushMethod(target, name, {type: MethodType.deactivate, name}, 'Deactivate');
 }
 
 /**
@@ -54,7 +54,7 @@ export const Dependency = (params: DependencyMeta) => {
  */
 export const Inject = (params: DependencyMeta) => {
     return (target: any, name: string, pos: number) => {
-        collector.pushParameter(target, name, pos, {...params})
+        collector.pushParameter(target, name, pos, {...params}, 'Inject')
     }
 }
 

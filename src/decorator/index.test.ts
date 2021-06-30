@@ -21,17 +21,17 @@ const collector = new DecoratedClassBuilder<
 	ClassMeta,
 	MethodMeta,
 	ParameterMeta
->();
+>('test');
 
 const ClassDecorator = (params: { name: string }) => {
 	return (target: any) => {
-		collector.pushClass(target, params);
+		collector.pushClass(target, params, 'C');
 	};
 };
 
 const MethodDecorator = (params: { validate: boolean }) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
-		collector.pushMethod(proto, name, { name, desc, ...params });
+		collector.pushMethod(proto, name, { name, desc, ...params }, 'M1');
 		const methDef = collector.cur.methods[name];
 		desc.value = (...args: any[]) => {
 			for (let i = 0; i < args.length; i++) {
@@ -52,24 +52,24 @@ const MethodDecorator = (params: { validate: boolean }) => {
 };
 
 const MethodDecorator2 = (proto: any, name: string, desc: PropertyDescriptor) => {
-	collector.pushMethod(proto, name, { name, desc, validate: false });
+	collector.pushMethod(proto, name, { name, desc, validate: false }, 'M2');
 };
 
 const PropertyDecorator = () => {
 	return (proto: any, name: string, desc?: any) => {
-		collector.pushProperty(proto, name, {desc});
+		collector.pushProperty(proto, name, {desc}, 'Prop1');
 	};
 };
 
 const ParameterDecorator = (params: { matchRegex: RegExp }) => {
 	return (proto: any, method: string, pos: number) => {
-		collector.pushParameter(proto, method, pos, { pos, ...params });
+		collector.pushParameter(proto, method, pos, { pos, ...params }, 'Param1');
 	};
 };
 
 const ParameterDecorator2 = () => {
 	return (proto: any, method: string, pos: number) => {
-		collector.pushParameter(proto, method, pos, { pos, matchRegex: /-/ });
+		collector.pushParameter(proto, method, pos, { pos, matchRegex: /-/ }, 'Param2');
 	};
 };
 
@@ -118,12 +118,16 @@ describe('module: decorator', () => {
 			expect(record.gid).toEqual('1');
 			expect(record.metadata[0].name).toEqual('Example');
 			expect(record.methods['method1']).not.toBeUndefined();
+			expect(record.methods['method1'].metadata[0]._provider).toEqual('test')
+			expect(record.methods['method1'].metadata[0]._decorator).toEqual('M1')
 			expect(record.methods['method1'].parameters[0].length).toEqual(1);
 			expect(
 				record.methods['method1'].parameters[0][0].matchRegex
 			).toEqual(/hello/);
 			expect(record.staticMethods['method2']).not.toBeUndefined();
 			expect(record.staticMethods['method2'].metadata[0].validate).toEqual(false);
+			expect(record.staticMethods['method2'].metadata[0]._provider).toEqual('test')
+			expect(record.staticMethods['method2'].metadata[0]._decorator).toEqual('M1')
 
 			expect(record.properties['prop1']).not.toBeUndefined();
 		});
@@ -134,7 +138,11 @@ describe('module: decorator', () => {
 			expect(record.metadata[0].name).toEqual('Example2');
 			expect(Object.keys(record.methods).length).toEqual(2);
 			expect(record.methods['x']).not.toBeUndefined();
+			expect(record.methods['x'].metadata[0]._provider).toEqual('test')
+			expect(record.methods['x'].metadata[0]._decorator).toEqual('M2')
 			expect(record.methods['y']).not.toBeUndefined();
+			expect(record.methods['y'].metadata[0]._provider).toEqual('test')
+			expect(record.methods['y'].metadata[0]._decorator).toEqual('M2')
 			expect(Object.keys(record.properties).length).toEqual(0);
 		});
 	});

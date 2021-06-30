@@ -3,51 +3,49 @@
  * metadata for reflection.
  */
 
-import EventEmitter from 'events';
-import { getOrMakeGidForConstructor } from './registry';
+import {getOrMakeGidForConstructor} from './registry';
 
 export type DecoratedParameter = {
-	method: string;
-	pos: number;
+    method: string;
+    pos: number;
 };
 
-export enum DecoratorRecordType {
-	clazz = 1,
-	method,
-	accesor,
-	property,
-	parameter,
+export enum RecordType {
+    clazz = 1,
+    property,
+    method,
+    parameter,
 }
 
-export type DecoratorRecord<T extends any = any> = {
-	type: DecoratorRecordType;
-	metadata: T;
+/**
+ * Extend metadata with key identifiers that determine scope/context of metadata.
+ */
+export type MetaDescriptor = {
+    _type: RecordType;
+    _provider: string;
+    _decorator: string;
 };
 
-export type DecoratedMethod<
-	Method extends any = any,
-	Parameter extends any = any
-> = {
-	metadata: Method[];
-	parameters: Parameter[][];
+export type DecoratedMethod<Method extends any = any,
+    Parameter extends any = any> = {
+    metadata: (MetaDescriptor & Method)[];
+    parameters: (MetaDescriptor & Parameter)[][];
 };
 
 /**
  * A convenient structure encapsulating all class decorations.
  */
-export type DecoratedClass<
-	Clazz extends any = any,
-	Method extends any = any,
-	Property extends any = any,
-	Parameter extends any = any
-> = {
-	gid: string;
-	clazz: any;
-	metadata: Clazz[];
-	methods: Record<string, DecoratedMethod<Method, Parameter>>;
-	staticMethods: Record<string, DecoratedMethod<Method, Parameter>>;
-	properties: Record<string, Property[]>;
-	staticProperties: Record<string, Property[]>;
+export type DecoratedClass<Clazz extends any = any,
+    Method extends any = any,
+    Property extends any = any,
+    Parameter extends any = any> = {
+    gid: string;
+    clazz: any;
+    metadata: (MetaDescriptor & Clazz)[];
+    methods: Record<string, DecoratedMethod<Method, Parameter>>;
+    staticMethods: Record<string, DecoratedMethod<Method, Parameter>>;
+    properties: Record<string, (MetaDescriptor & Property)[]>;
+    staticProperties: Record<string, (MetaDescriptor & Property)[]>;
 };
 
 // @todo globalDecoratedClass
@@ -55,23 +53,21 @@ export type DecoratedClass<
 /**
  * Generates an empty structure with given gid.
  */
-export const getEmptyDecoratedClass = <
-	Clazz extends object = any,
-	Method extends object = any,
-	Parameter extends object = any,
-	Property extends object = any
->(
-	gid: string
+export const getEmptyDecoratedClass = <Clazz extends object = any,
+    Method extends object = any,
+    Parameter extends object = any,
+    Property extends object = any>(
+    gid: string
 ): DecoratedClass<Clazz, Method, Parameter, Property> => {
-	return {
-		gid,
-		clazz: undefined,
-		metadata: [],
-		methods: {},
-		staticMethods: {},
-		properties: {},
-		staticProperties: {},
-	};
+    return {
+        gid,
+        clazz: undefined,
+        metadata: [],
+        methods: {},
+        staticMethods: {},
+        properties: {},
+        staticProperties: {},
+    };
 };
 
 /**
@@ -80,110 +76,111 @@ export const getEmptyDecoratedClass = <
  * to reflect-metadata with extra benefits (e.g. annotation libs can expose
  * their metadata via gid).
  */
-export class DecoratedClassBuilder<
-	Clazz extends object = any,
-	Method extends object = any,
-	Parameter extends object = any,
-	Property extends object = any
-> {
-	curGid = '';
-	cur: DecoratedClass = getEmptyDecoratedClass<
-		Clazz,
-		Method,
-		Property,
-		Parameter
-	>('');
+export class DecoratedClassBuilder<Clazz extends object = any,
+    Method extends object = any,
+    Parameter extends object = any,
+    Property extends object = any> {
+    curGid = '';
+    cur: DecoratedClass = getEmptyDecoratedClass<Clazz,
+        Method,
+        Property,
+        Parameter>('');
 
-	private finalized: DecoratedClass[] = [];
-	private finalizedCalled = false;
+    private finalized: DecoratedClass[] = [];
+    private finalizedCalled = false;
+    private provider: string;
 
-	initProperty(name: string, isStatic: boolean, metadata: Property) {
-		const target = isStatic ? this.cur.staticProperties : this.cur.properties;
-		if (!target[name]) {
-			target[name] = [];
-		}
+    constructor(provider: string) {
+        this.provider = provider;
+    }
 
-		target[name].push(metadata);
-	}
+    initProperty(name: string, isStatic: boolean, metadata: Property, decorator: string) {
+        const target = isStatic ? this.cur.staticProperties : this.cur.properties;
+        if (!target[name]) {
+            target[name] = [];
+        }
 
-	pushProperty(proto: any, name: string, metadata: Property) {
-		const isStatic = !!proto.prototype;
-		this.checkProto(proto);
-		this.initProperty(name, isStatic, metadata);
-	}
+        target[name].push({...metadata, _type: RecordType.property, _provider: this.provider, _decorator: decorator});
+    }
 
-	initMethod(name: string, isStatic: boolean) {
-		const target = isStatic ? this.cur.staticMethods : this.cur.methods;
-		if (!target[name]) {
-			target[name] = {
-				metadata: [],
-				parameters: [],
-			};
-		}
-	}
+    pushProperty(proto: any, name: string, metadata: Property, decorator = '') {
+        const isStatic = !!proto.prototype;
+        this.checkProto(proto);
+        this.initProperty(name, isStatic, metadata, decorator);
+    }
 
-	pushMethod(proto: any, name: string, metadata: Method) {
-		const isStatic = !!proto.prototype;
-		this.checkProto(proto);
-		this.initMethod(name, isStatic);
-		if (isStatic) {
-			this.cur.staticMethods[name].metadata.push({ ...metadata });
-		} else {
-			this.cur.methods[name].metadata.push({ ...metadata });
-		}
-	}
+    initMethod(name: string, isStatic: boolean) {
+        const target = isStatic ? this.cur.staticMethods : this.cur.methods;
+        if (!target[name]) {
+            target[name] = {
+                metadata: [],
+                parameters: [],
+            };
+        }
+    }
 
-	initParameter(methodName: string, pos: number, isStatic: boolean) {
-		this.initMethod(methodName, isStatic);
-		if (!this.cur.methods[methodName].parameters[pos]) {
-			this.cur.methods[methodName].parameters[pos] = [];
-		}
-	}
+    pushMethod(proto: any, name: string, metadata: Method, decorator = '') {
+        const isStatic = !!proto.prototype;
+        this.checkProto(proto);
+        this.initMethod(name, isStatic);
+        const meta = {...metadata, _type: RecordType.method, _provider: this.provider, _decorator: decorator};
+        if (isStatic) {
+            this.cur.staticMethods[name].metadata.push(meta);
+        } else {
+            this.cur.methods[name].metadata.push(meta);
+        }
+    }
 
-	pushParameter(
-		proto: any,
-		methodName: string,
-		pos: number,
-		metadata: Parameter
-	) {
-		const isStatic = !!proto.prototype;
-		this.checkProto(proto);
-		this.initParameter(methodName, pos, isStatic);
-		this.cur.methods[methodName].parameters[pos].push(metadata);
-	}
+    initParameter(methodName: string, pos: number, isStatic: boolean) {
+        this.initMethod(methodName, isStatic);
+        if (!this.cur.methods[methodName].parameters[pos]) {
+            this.cur.methods[methodName].parameters[pos] = [];
+        }
+    }
 
-	pushClass(clazz: any, metadata: Clazz) {
-		this.checkProto(clazz);
-		this.cur.clazz = clazz;
-		this.cur.metadata.push(metadata);
-	}
+    pushParameter(
+        proto: any,
+        methodName: string,
+        pos: number,
+        metadata: Parameter,
+        decorator = ''
+    ) {
+        const isStatic = !!proto.prototype;
+        this.checkProto(proto);
+        this.initParameter(methodName, pos, isStatic);
+        this.cur.methods[methodName].parameters[pos].push({...metadata, _type: RecordType.parameter, _provider: this.provider, _decorator: decorator});
+    }
 
-	checkProto(proto: any) {
-		const gid = getOrMakeGidForConstructor(proto);
-		if (this.curGid != gid) {
-			if (this.curGid) {
-				this.finalized.push({ ...this.cur });
-			}
+    pushClass(clazz: any, metadata: Clazz, decorator = '') {
+        this.checkProto(clazz);
+        this.cur.clazz = clazz;
+        this.cur.metadata.push({...metadata, _type: RecordType.clazz, _provider: this.provider, _decorator: decorator});
+    }
 
-			this.cur = getEmptyDecoratedClass<
-				Clazz,
-				Method,
-				Property,
-				Parameter
-			>(gid);
-			this.curGid = gid;
-		}
-	}
+    checkProto(proto: any) {
+        const gid = getOrMakeGidForConstructor(proto);
+        if (this.curGid != gid) {
+            if (this.curGid) {
+                this.finalized.push({...this.cur});
+            }
 
-	getFinalized(): DecoratedClass<Clazz, Method, Parameter, Property>[] {
-		if (!this.finalizedCalled) {
-			this.finalizedCalled = true;
-			if (this.curGid) {
-				this.finalized.push({ ...this.cur });
-				this.curGid = '';
-			}
-		}
+            this.cur = getEmptyDecoratedClass<Clazz,
+                Method,
+                Property,
+                Parameter>(gid);
+            this.curGid = gid;
+        }
+    }
 
-		return [...this.finalized];
-	}
+    getFinalized(): DecoratedClass<Clazz, Method, Parameter, Property>[] {
+        if (!this.finalizedCalled) {
+            this.finalizedCalled = true;
+            if (this.curGid) {
+                this.finalized.push({...this.cur});
+                this.curGid = '';
+            }
+        }
+
+        return [...this.finalized];
+    }
 }

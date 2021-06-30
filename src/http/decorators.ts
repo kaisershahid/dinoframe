@@ -12,11 +12,11 @@ const collector = new DecoratedClassBuilder<
 	ControllerConfig,
 	HandlerConfig,
 	InjectedRequestParam
->();
+>('http');
 
 export const Controller = (params: ControllerConfig = {}) => {
 	return (target: any) => {
-		collector.pushClass(target, params);
+		collector.pushClass(target, params, 'Controller');
 	};
 };
 
@@ -25,25 +25,25 @@ export const isParameterEmpty = (v: any): boolean =>
 
 export const Route = (params: RouteConfig) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
-		collector.pushMethod(proto, name, { type: HandlerConfigType.route, name, desc, ...params });
+		collector.pushMethod(proto, name, { type: HandlerConfigType.route, name, desc, ...params }, 'Route');
 	};
 };
 
 export const Middleware = (params: MiddlewareConfig = {}) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
-		collector.pushMethod(proto, name, { type: HandlerConfigType.middleware, name, desc, ...params });
+		collector.pushMethod(proto, name, { type: HandlerConfigType.middleware, name, desc, ...params }, 'Middleware');
 	};
 };
 
 export const ErrorMiddleware = (params: ErrorMiddlewareConfig = {}) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
-		collector.pushMethod(proto, name, { type: HandlerConfigType.error, name, desc, ...params });
+		collector.pushMethod(proto, name, { type: HandlerConfigType.error, name, desc, ...params }, 'ErrorMiddleware');
 	};
 };
 
 export const RequestParam = (params: RequestParamConfig) => {
 	return (proto: any, method: string, pos: number) => {
-		collector.pushParameter(proto, method, pos, { method, pos, ...params });
+		collector.pushParameter(proto, method, pos, { method, pos, ...params }, 'RequestParam');
 	};
 };
 
