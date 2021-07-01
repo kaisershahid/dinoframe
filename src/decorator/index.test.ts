@@ -1,6 +1,6 @@
-import {DecoratedClassBuilder} from './index';
-import {getOrMakeGidForConstructor, GidEnabledClass} from './registry';
-import exp = require("constants");
+import {DecoratedClassBuilder, getBundledMetadata} from './index';
+import {getOrMakeGidForConstructor, RegistryGidAccessor} from './registry';
+import {BundleDecoratorFactory} from "./bundle";
 
 type ClassMeta = {
 	name: string;
@@ -17,22 +17,25 @@ type ParameterMeta = {
 	pos: number;
 };
 
-const collector = new DecoratedClassBuilder<
+const decBuilder = new DecoratedClassBuilder<
 	ClassMeta,
 	MethodMeta,
 	ParameterMeta
 >('test');
 
+const DecoratorTestBundle = BundleDecoratorFactory('dinoframe.decorator.test', decBuilder);
+const DecoratorTestBundle2 = BundleDecoratorFactory('dinoframe.decorator.example2.test', decBuilder);
+
 const ClassDecorator = (params: { name: string }) => {
 	return (target: any) => {
-		collector.pushClass(target, params, 'C');
+		decBuilder.pushClass(target, params, 'C');
 	};
 };
 
 const MethodDecorator = (params: { validate: boolean }) => {
 	return (proto: any, name: string, desc: PropertyDescriptor) => {
-		collector.pushMethod(proto, name, { name, desc, ...params }, 'M1');
-		const methDef = collector.cur.methods[name];
+		decBuilder.pushMethod(proto, name, { name, desc, ...params }, 'M1');
+		const methDef = decBuilder.cur.methods[name];
 		desc.value = (...args: any[]) => {
 			for (let i = 0; i < args.length; i++) {
 				if (methDef.parameters[i]) {
@@ -52,27 +55,28 @@ const MethodDecorator = (params: { validate: boolean }) => {
 };
 
 const MethodDecorator2 = (proto: any, name: string, desc: PropertyDescriptor) => {
-	collector.pushMethod(proto, name, { name, desc, validate: false }, 'M2');
+	decBuilder.pushMethod(proto, name, { name, desc, validate: false }, 'M2');
 };
 
 const PropertyDecorator = () => {
 	return (proto: any, name: string, desc?: any) => {
-		collector.pushProperty(proto, name, {desc}, 'Prop1');
+		decBuilder.pushProperty(proto, name, {desc}, 'Prop1');
 	};
 };
 
 const ParameterDecorator = (params: { matchRegex: RegExp }) => {
 	return (proto: any, method: string, pos: number) => {
-		collector.pushParameter(proto, method, pos, { pos, ...params }, 'Param1');
+		decBuilder.pushParameter(proto, method, pos, { pos, ...params }, 'Param1');
 	};
 };
 
 const ParameterDecorator2 = () => {
 	return (proto: any, method: string, pos: number) => {
-		collector.pushParameter(proto, method, pos, { pos, matchRegex: /-/ }, 'Param2');
+		decBuilder.pushParameter(proto, method, pos, { pos, matchRegex: /-/ }, 'Param2');
 	};
 };
 
+@DecoratorTestBundle
 @ClassDecorator({ name: 'Example' })
 class Example {
 	@MethodDecorator({ validate: true })
@@ -89,6 +93,7 @@ class Example {
 	}
 }
 
+@DecoratorTestBundle2
 @ClassDecorator({ name: 'Example2' })
 class Example2 {
 	private _x:boolean;
@@ -112,7 +117,7 @@ class Example2 {
 
 describe('module: decorator', () => {
 	describe('DecoratedClassBuilder', () => {
-		const finalized = collector.getFinalized();
+		const finalized = decBuilder.getFinalized();
 		it('processes Example', () => {
 			const record = finalized[0];
 			expect(record.gid).toEqual('1');
@@ -131,6 +136,11 @@ describe('module: decorator', () => {
 
 			expect(record.properties['prop1']).not.toBeUndefined();
 		});
+		it('dinoframe.decorator.test bundle only contains Example', () => {
+			const {metadata} = getBundledMetadata('dinoframe.decorator.test');
+			expect(metadata.length).toEqual(1);
+			expect(metadata[0].metadata[0].name).toEqual('Example')
+		})
 
 		it('processes Example2', () => {
 			const record = finalized[1];
@@ -145,6 +155,11 @@ describe('module: decorator', () => {
 			expect(record.methods['y'].metadata[0]._decorator).toEqual('M2')
 			expect(Object.keys(record.properties).length).toEqual(0);
 		});
+		it('dinoframe.decorator.example2.test bundle only contains Example2', () => {
+			const {metadata} = getBundledMetadata('dinoframe.decorator.example2.test');
+			expect(metadata.length).toEqual(1);
+			expect(metadata[0].metadata[0].name).toEqual('Example2')
+		})
 	});
 
 	describe('modifying class behavior of Example', () => {
@@ -173,14 +188,13 @@ describe('module: decorator', () => {
 	});
 
 	describe('module: registry', () => {
-		@GidEnabledClass()
+		@RegistryGidAccessor
 		class GidClass {}
 
 		describe('GidEnabledClass & #swapConstructorWithSubclass()', () => {
 			it('extends GidClass and maps gid to subclass', () => {
 				const gid = getOrMakeGidForConstructor(GidClass);
-				const clazz = new GidClass() as any;
-				expect(clazz.getDecoratorGid()).toEqual(gid);
+				expect((GidClass as any).getDecoratorGid()).toEqual(gid);
 			});
 		});
 	});

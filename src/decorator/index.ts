@@ -70,6 +70,23 @@ export const getEmptyDecoratedClass = <Clazz extends object = any,
     };
 };
 
+const globalDecoratedClasses: DecoratedClass[] = [];
+export const getGlobalDecoratedClasses = () => [...globalDecoratedClasses];
+
+const bundleRegistry: Record<string, DecoratedClass[]> = {};
+const addToBundleRegistry = (id: string, metadata: DecoratedClass) => {
+    if (!bundleRegistry[id]) {
+        bundleRegistry[id] = [];
+    }
+    bundleRegistry[id].push(metadata);
+}
+export const getBundledMetadata = (id: string) => {
+    if (!bundleRegistry[id]) {
+        return {id, metadata: []};
+    }
+    return {id, metadata: [... bundleRegistry[id]]}
+}
+
 /**
  * Iteratively construct a class tree of decorators for easy in-process and post-
  * process introspection. This is a concrete and easy-to-work-with alternative
@@ -89,6 +106,7 @@ export class DecoratedClassBuilder<Clazz extends object = any,
     private finalized: DecoratedClass[] = [];
     private finalizedCalled = false;
     private provider: string;
+    private bundleId = '';
 
     constructor(provider: string) {
         this.provider = provider;
@@ -155,15 +173,17 @@ export class DecoratedClassBuilder<Clazz extends object = any,
         this.checkProto(clazz);
         this.cur.clazz = clazz;
         this.cur.metadata.push({...metadata, _type: RecordType.clazz, _provider: this.provider, _decorator: decorator});
+
+        const bundleId = (metadata as any).bundleId;
+        if (decorator == 'Bundle' && bundleId) {
+            this.bundleId = bundleId;
+        }
     }
 
     checkProto(proto: any) {
         const gid = getOrMakeGidForConstructor(proto);
         if (this.curGid != gid) {
-            if (this.curGid) {
-                this.finalized.push({...this.cur});
-            }
-
+            this.finalize();
             this.cur = getEmptyDecoratedClass<Clazz,
                 Method,
                 Property,
@@ -172,15 +192,31 @@ export class DecoratedClassBuilder<Clazz extends object = any,
         }
     }
 
+    protected finalize() {
+        if (this.curGid) {
+            this.finalized.push({...this.cur});
+            globalDecoratedClasses.push({...this.cur});
+            if (this.bundleId) {
+                addToBundleRegistry(this.bundleId, {...this.cur})
+            }
+        }
+    }
+
     getFinalized(): DecoratedClass<Clazz, Method, Parameter, Property>[] {
         if (!this.finalizedCalled) {
             this.finalizedCalled = true;
-            if (this.curGid) {
-                this.finalized.push({...this.cur});
-                this.curGid = '';
-            }
+            this.finalize();
         }
 
         return [...this.finalized];
     }
+}
+
+/**
+ * Given an input list of metadata, only return the ones for specified provider. E.g.
+ * `filterMetadataByProvider([{_provider:'http'},{_provider: 'service-container'}], 'http')`
+ * returns `[{_provider:'http'}]`
+ */
+export const filterMetadataByProvider = (metadata: any[], provider: string) => {
+    metadata.filter(m => m._provider == provider)
 }

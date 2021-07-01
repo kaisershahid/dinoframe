@@ -83,7 +83,7 @@ export const getConstructorForGid = (gid: string): Function =>
 
 /**
  * If your class decorator extends base class, call this function to associate
- * the gid to the subclass (otherwise it'll always be associated with the base.
+ * the gid to the subclass (otherwise it'll always be associated with the base.)
  */
 export const swapConstructorWithSubclass = (subclass: Function) => {
 	if (lastGid) {
@@ -93,31 +93,32 @@ export const swapConstructorWithSubclass = (subclass: Function) => {
 	}
 };
 
-export type DecoratorGidEnabled = {
+export type GidAccessible = {
 	getDecoratorGid(): string;
 };
 
-export const isDecoratorGidEnabled = (o: any): o is DecoratorGidEnabled =>
+export const hasGidAccessor = (o: any): o is GidAccessible =>
 	typeof o?.getDecoratorGid === 'function';
 
 /**
- * Attaches the gid to a class for convenient access. If you plan on querying
- * classes' gids frequently, consider annotating with this to avoid lookup
- * costs (only necessary for post-processing usage).
+ * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
+ * returned, otherwise, the class will be
  */
-export const GidEnabledClass = () => {
-	return <T extends { new (...args: any[]): {} }>(constructor: T) => {
-		const gid = getOrMakeGidForConstructor(constructor);
-		const newConstructor = class
-			extends constructor
-			implements DecoratorGidEnabled
-		{
-			getDecoratorGid() {
-				return gid;
-			}
-		};
+export const getGid = (o: any) => RegistryGidAccessor(o).getDecoratorGid();
 
-		swapConstructorWithSubclass(newConstructor);
-		return newConstructor;
-	};
+/**
+ * Attaches `getDecoratorGid(): string` to target for convenient access to GID.
+ * @todo guard against non-function?
+ */
+export const RegistryGidAccessor = <T extends { new(...args: any[]): {} }>(target: T): T & GidAccessible => {
+	if (hasGidAccessor(target)) {
+		return target;
+	}
+
+	const gid = getOrMakeGidForConstructor(target);
+	(target as any).getDecoratorGid = () => {
+		return gid;
+	}
+
+	return target as any;
 };

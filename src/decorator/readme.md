@@ -27,6 +27,33 @@ The `DecoratedClass` encapsulates all class decorators in a logical way:
 
 This class is built up with a simple access pattern using `DecoratedClassBuilder` (see `http/decorators.ts` for example usage). The _decorators_ referenced are types you define and generate for class, method, parameter, property, and accessor.)
 
+## Bundles
+
+In order to provide better isolation and flexibility, classes can be grouped together in a **bundle**. You can then retrieve the annotations for just that bundle. Here's how:
+
+```typescript
+import {DecoratedClassBuilder, getBundledMetadata} from "./index";
+import {BundleDecoratorFactory} from "./bundle";
+
+const builder = new DecoratedClassBuilder();
+// first, we'll create our decorator function using BundleDecoratorFactory
+const MyBundle = BundleDecoratorFactory('my', builder);
+
+// next, apply the decorator to your classes
+@MyBundle
+class Service1 {
+}
+
+@MyBundle
+class Service2 {
+}
+
+// finally, see the records for your classes
+console.log(getBundledMetadata('my'))
+```
+
+With bundles, it's easy to only enable the ones you want for your application.
+
 ---
 
 ## How TS Processes Decorators
