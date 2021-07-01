@@ -1,5 +1,25 @@
 import {DecoratedClass, DecoratedClassBuilder, DecoratedMethod} from "../decorator";
 
+/**
+ * These are the standard priorities used to organize startup. Note that priorities don't absolutely
+ * guarantee starting before lower priorities -- if a higher priority service has to wait on a lower
+ * level service, this would never be satisfied. Treat highest priority services as:
+ *
+ * - those having no dependencies (or dependences that are likely high priority) AND
+ * - are a base dependency for large branches of the service tree
+ */
+export enum ServicePhases {
+    /** The most vital services necessary to connect the next layer */
+    bootstrap = 10000,
+    /** Critical db and other data provider initialization */
+    datalink = 90000,
+    /** Config handlers necessary to provide configs for lower priority services */
+    config = 80000,
+    usercritical= 10000,
+    default = 0,
+    userlow = -10000
+}
+
 export type BaseServiceMeta = {
     interfaces?: string[];
     disabled?: boolean;

@@ -10,7 +10,7 @@ describe('module: http.decorator: verification of ExampleController', () => {
 	it('processes @Controller', () => {
         expect(annotations.metadata[0]).toEqual({
             _type: RecordType.clazz,
-            _provider: 'http',
+            _provider: 'dinoframe.http',
             _decorator: 'Controller',
             id: 'test.ExampleController',
             path: '/prefix',

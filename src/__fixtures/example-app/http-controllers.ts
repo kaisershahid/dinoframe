@@ -6,6 +6,10 @@ import {TrivialService} from "./services";
 
 const ControllerBundle = BundleDecoratorFactory('example-app.controllers')
 
+/**
+ * Since this controller has `@Service` declared, service injection will take place
+ * that then becomes available in the routes.
+ */
 @ControllerBundle
 @Controller({
     methods: ['post']

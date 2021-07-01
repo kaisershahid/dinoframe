@@ -22,8 +22,8 @@ const decBuilder = new DecoratedClassBuilder<
 	ParameterMeta
 >('test');
 
-const DecoratorTestBundle = BundleDecoratorFactory('dinoframe.decorator.test', decBuilder);
-const DecoratorTestBundle2 = BundleDecoratorFactory('dinoframe.decorator.example2.test', decBuilder);
+const DecoratorTestBundle = BundleDecoratorFactory('dinoframe.decorator.test');
+const DecoratorTestBundle2 = BundleDecoratorFactory('dinoframe.decorator.example2.test');
 
 const ClassDecorator = (params: { name: string }) => {
 	return (target: any) => {
