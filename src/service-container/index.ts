@@ -7,6 +7,8 @@ import {
     ServiceState
 } from "./types";
 
+export const PROVIDER_ID = 'service-container';
+
 /**
  * Keeps track of an individual service's dependencies. Await `ServiceTracker.promise` to
  * get notified of start (returns the service id).
@@ -142,15 +144,56 @@ export class ServiceContainer implements Container {
         initialRecords.forEach(r => this.register(r));
     }
 
+    /**
+     * For bootstrapping purposes, you can directly add an instance to the container.
+     * @return True if id doesn't exist, false otherwise
+     */
+    registerDirect(id: string, serviceInst: any): boolean {
+        if (this.instances[id]) {
+            return false;
+        }
+
+        // @todo on deactivate, if gid is blank, ignore
+        const pos = this.records.push({
+            id,
+            activator: "",
+            clazz: undefined,
+            deactivator: "",
+            dependencies: [],
+            factory: "",
+            gid: "",
+            injectableFactory: [],
+            injectableMethods: {},
+            interfaces: [],
+            priority: 0,
+            status: ServiceState.activated
+        })
+        this.recordsById[id] = pos;
+        this.instances[id] = serviceInst;
+
+        return true;
+    }
+
     has(id: string) {
         return this.instances[id] !== undefined;
+    }
+
+    hasGid(gid: string) {
+        const gidx = this.recordsByGid[gid];
+        return this.has(this.records[gidx]?.id);
     }
 
     resolve<T extends any = any>(id: string): T {
         if (!this.has(id)) {
             throw new Error(`${id}: service not found`); // @todo specific error
         }
+
         return this.instances[id] as T;
+    }
+
+    resolveGid<T extends any = any>(gid: string): T {
+        const gidx = this.recordsByGid[gid];
+        return this.resolve<T>(this.records[gidx]?.id);
     }
 
     query<T extends any = any>(matchInterface: string): T[] {
@@ -169,7 +212,8 @@ export class ServiceContainer implements Container {
         return services;
     }
 
-    register(metadata: DecoratedServiceRecord) {
+    register(metadata: DecoratedServiceRecord)
+    {
         if (this.recordsById[metadata.id]) {
             return;
         }
@@ -205,7 +249,7 @@ export class ServiceContainer implements Container {
             // console.log('starting init', rec.id, rec);
             promises.push(this.initServiceFromRecord(rec).then(inst => {
                 rec.status = ServiceState.activated;
-                // console.log(`activated: ${rec.id}`)
+                console.log(`service-container: ${rec.id}`)
                 const notifyServices = this.depTracker.serviceAvailable(rec.id);
                 const interfaces: string[] = [];
                 const notifyInterfaces = rec.interfaces

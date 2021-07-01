@@ -22,7 +22,8 @@ export type AllowedHandler = RequestHandler | ErrorRequestHandler;
  */
 export type BoundHandlerCallback = (
     handler: AllowedHandler,
-    param: BaseDecoratorConfig
+    param: HandlerConfig,
+    controller: DecoratedClass<ControllerConfig>
 ) => void;
 
 /**
@@ -195,22 +196,26 @@ export class HttpDecoratorsBinder {
         RequestParamConfig,
         any>[];
 
-    constructor(container: ServiceContainer, controllers: DecoratedClass[]) {
+    constructor(container: ServiceContainer, controllers: DecoratedClass[] = []) {
         this.container = container;
         this.controllers = [...controllers];
+    }
+
+    setControllers(controllers: DecoratedClass[]) {
+        this.controllers = [...controllers];
+        return this;
     }
 
     bind(callback: BoundHandlerCallback) {
         //const httpServer = this.container.resolve('http')
         const boundList: [
                 RequestHandler | ErrorRequestHandler,
-            BaseDecoratorConfig
+            HandlerConfig, DecoratedClass<ControllerConfig>
         ][] = [];
         // create scoped functions class-first and push to list
         for (const ctrl of this.controllers) {
             const {gid, clazz} = ctrl;
-            // @todo check if class exists in container
-            const inst = new clazz();
+            const inst = this.container.hasGid(gid) ? this.container.resolveGid(gid) : new clazz();
 
             let {
                 path: pathPrefix,
@@ -248,6 +253,7 @@ export class HttpDecoratorsBinder {
                     boundList.push([
                         bound,
                         {...meta, path, headers, methods, priority},
+                        ctrl
                     ]);
                 }
             }
@@ -259,6 +265,6 @@ export class HttpDecoratorsBinder {
                 const p2 = m2.priority as number;
                 return p1 < p2 ? 1 : p1 > p2 ? -1 : 0;
             })
-            .forEach(([bound, param]) => callback(bound, param));
+            .forEach(([bound, param, ctrl]) => callback(bound, param, ctrl));
     }
 }

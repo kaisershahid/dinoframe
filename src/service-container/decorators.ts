@@ -1,19 +1,17 @@
 import {
     BaseServiceMeta,
-    ClassServiceMetadata, DecoratedServiceRecord,
+    DecoratedServiceRecord,
     DependencyMeta,
     getServiceMetadataBuilder,
-    MethodType,
-    ServiceRecord,
-    ServiceState
+    MethodType
 } from "./types";
 import {getOrMakeGidForConstructor} from "../decorator/registry";
 
-const collector = getServiceMetadataBuilder();
+const builder = getServiceMetadataBuilder();
 
 export const Service = (id: string, meta: BaseServiceMeta = {}) => {
     return (clazz: any) => {
-        collector.pushClass(clazz, {id, gid: getOrMakeGidForConstructor(clazz), ...meta})
+        builder.pushClass(clazz, {id, gid: getOrMakeGidForConstructor(clazz), ...meta}, 'Service')
     }
 }
 
@@ -22,7 +20,7 @@ export const Service = (id: string, meta: BaseServiceMeta = {}) => {
  * if you need to inject dependencies via constructor.
  */
 export const Factory = (target: any, name: string, desc: PropertyDescriptor) => {
-    collector.pushMethod(target, name, {type: MethodType.factory, name});
+    builder.pushMethod(target, name, {type: MethodType.factory, name}, 'Factory');
 }
 
 /**
@@ -30,14 +28,14 @@ export const Factory = (target: any, name: string, desc: PropertyDescriptor) => 
  * dependents.
  */
 export const Activate = (target: any, name: string, desc: PropertyDescriptor) => {
-    collector.pushMethod(target, name, {type: MethodType.activate, name});
+    builder.pushMethod(target, name, {type: MethodType.activate, name}, 'Activate');
 }
 
 /**
  * Method -- invoked on shutdown. error is logged as error; does not block dependents.
  */
 export const Deactivate = (target: any, name: string, desc: PropertyDescriptor) => {
-    collector.pushMethod(target, name, {type: MethodType.deactivate, name});
+    builder.pushMethod(target, name, {type: MethodType.deactivate, name}, 'Deactivate');
 }
 
 /**
@@ -54,7 +52,7 @@ export const Dependency = (params: DependencyMeta) => {
  */
 export const Inject = (params: DependencyMeta) => {
     return (target: any, name: string, pos: number) => {
-        collector.pushParameter(target, name, pos, {...params})
+        builder.pushParameter(target, name, pos, {...params}, 'Inject')
     }
 }
 
@@ -65,8 +63,11 @@ export const Inject = (params: DependencyMeta) => {
 export const ServiceFactory = (id) => {
 }
 
+/**
+ * Returns ALL processed @Service as DecoratedServiceRecord instances
+ */
 export const getDecoratedServiceRecords = () => {
-    return collector.getFinalized().map((meta) => {
+    return builder.getFinalized().map((meta) => {
         return new DecoratedServiceRecord(meta)
     })
 }

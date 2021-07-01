@@ -15,7 +15,7 @@ export class ExampleController {
     }
 
     @Route({path: '/p1-injected', priority: -50})
-    p1Injected(request, response, next, @RequestParam({name: 'p1'}) p1?) {
+    p1Injected(request, response, next, @RequestParam('p1') p1?) {
         return p1;
     }
 
@@ -24,7 +24,7 @@ export class ExampleController {
         request,
         response,
         next,
-        @RequestParam({name: 'p1', required: true}) p1?: any
+        @RequestParam('p1', { required: true}) p1?: any
     ) {
     }
 
@@ -33,7 +33,7 @@ export class ExampleController {
         request,
         response,
         next,
-        @RequestParam({name: 'p1', enumValues: ['1', '2']}) p1?
+        @RequestParam('p1', {enumValues: ['1', '2']}) p1?
     ) {
     }
 
@@ -42,8 +42,8 @@ export class ExampleController {
         request,
         response,
         next,
-        @RequestParam({
-            name: 'p1',
+        @RequestParam(
+            'p1', {
             transformer: (val: any) => {
                 if (val === 'to-error') {
                     return 'err';
@@ -67,7 +67,7 @@ export class ExampleController {
     }
 
     @ErrorMiddleware()
-    errorHandler(err: any, request, response, next, @RequestParam({name: 'p1', transformer: (v) => v + '!', validator: (v) => {
+    errorHandler(err: any, request, response, next, @RequestParam('p1', {transformer: (v) => v + '!', validator: (v) => {
             throw new Error('fail')
         }}) p1) {
         return {err, p1};
