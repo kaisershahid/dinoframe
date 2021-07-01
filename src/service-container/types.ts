@@ -1,4 +1,4 @@
-import {DecoratedClass, DecoratedClassBuilder} from "../decorator";
+import {DecoratedClass, DecoratedClassBuilder, DecoratedMethod} from "../decorator";
 
 export type BaseServiceMeta = {
     interfaces?: string[];
@@ -22,6 +22,7 @@ export enum ServiceState {
 
 export type InjectableList = (DependencyMeta | undefined)[];
 
+// @todo add inherit:boolean to indicate copying defs from superclass?
 export type ServiceRecord = {
     id: string;
     gid: string;
@@ -78,6 +79,7 @@ export const getServiceMetadataBuilder = () => {
  * Normalizes DecoratedClass metadata.
  */
 export class DecoratedServiceRecord implements ServiceRecord {
+    provider: string;
     id: string = '';
     gid: string = '';
     priority = 0;
@@ -92,18 +94,20 @@ export class DecoratedServiceRecord implements ServiceRecord {
     injectableMethods: Record<string, InjectableList> = {};
 
     constructor(classMeta: ClassServiceMetadata) {
+        this.provider = classMeta._provider;
         this.id = classMeta.metadata[0].id;
         this.gid = classMeta.metadata[0].gid;
         this.clazz = classMeta.clazz;
         this.priority = classMeta.metadata[0].priority ?? 0;
         this.interfaces = classMeta.metadata[0].interfaces ?? [];
         // @todo process explicit deps
-        this.processMethods(classMeta);
+        this.processMethods(classMeta.methods);
+        this.processMethods(classMeta.staticMethods, true);
     }
 
-    private processMethods(classMeta: ClassServiceMetadata) {
-        for (const methodName of Object.keys(classMeta.methods)) {
-            const mrec = classMeta.methods[methodName];
+    private processMethods(methods: Record<string,DecoratedMethod>, isStatic = false) {
+        for (const methodName of Object.keys(methods)) {
+            const mrec = methods[methodName];
             const params = mrec.parameters.map((params) => {
                 if (params) {
                     if (params[0].id) {

@@ -4,6 +4,7 @@
  */
 
 import {getOrMakeGidForConstructor} from './registry';
+import {DecoratedServiceRecord} from "../service-container/types";
 
 export type DecoratedParameter = {
     method: string;
@@ -11,7 +12,8 @@ export type DecoratedParameter = {
 };
 
 export enum RecordType {
-    clazz = 1,
+    all = 1,
+    clazz,
     property,
     method,
     parameter,
@@ -38,7 +40,7 @@ export type DecoratedMethod<Method extends any = any,
 export type DecoratedClass<Clazz extends any = any,
     Method extends any = any,
     Property extends any = any,
-    Parameter extends any = any> = {
+    Parameter extends any = any> = MetaDescriptor & {
     gid: string;
     clazz: any;
     metadata: (MetaDescriptor & Clazz)[];
@@ -48,8 +50,6 @@ export type DecoratedClass<Clazz extends any = any,
     staticProperties: Record<string, (MetaDescriptor & Property)[]>;
 };
 
-// @todo globalDecoratedClass
-
 /**
  * Generates an empty structure with given gid.
  */
@@ -57,9 +57,13 @@ export const getEmptyDecoratedClass = <Clazz extends object = any,
     Method extends object = any,
     Parameter extends object = any,
     Property extends object = any>(
-    gid: string
+    gid: string,
+    provider: string
 ): DecoratedClass<Clazz, Method, Parameter, Property> => {
     return {
+        _type: 0,
+        _decorator: '@DecoratedClass',
+        _provider: provider,
         gid,
         clazz: undefined,
         metadata: [],
@@ -70,21 +74,106 @@ export const getEmptyDecoratedClass = <Clazz extends object = any,
     };
 };
 
-const globalDecoratedClasses: DecoratedClass[] = [];
-export const getGlobalDecoratedClasses = () => [...globalDecoratedClasses];
+export type BundleIdAccessible = {
+    getBundleId(): string;
+};
+
+export const hasBundleId = (o: any): o is BundleIdAccessible =>
+    typeof o?.getBundleId === 'function';
+
+/**
+ * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
+ * returned, otherwise, the class will be
+ */
+export const getBundleId = (o: any): string | undefined => hasBundleId(o) ? o.getBundleId() : undefined;
+
+let decClassInstances: DecoratedClassBuilder[] = [];
+let lastBundleId = '';
+
+/**
+ * Returns a decorator that marks class as belonging to bundle identified by id. This allows you to
+ * easily group and identify related classes in a module.
+ *
+ * ```
+ * // e.g. setup base decorator for your bundle
+ * const MyApp = BundleDecoratorFactory('myapp');
+ *
+ * @MyApp
+ * class Service {}
+ * ```
+ *
+ */
+export const BundleDecoratorFactory = (id: string) => {
+    return (t: any) => {
+        t.getBundleId = () => id;
+        // notify each instance that @Bundle was found -- if the given target matches that
+        // instance's current clazz, the instance will push the record to the bundle registry
+        for (const dci of decClassInstances) {
+            dci.bundleDeclared(id, t);
+        }
+    }
+}
+
+export type BundleEntry = {
+    id: string;
+    metadata: DecoratedClass[];
+}
+
+const globalRegistry: Record<string, DecoratedClass[]> = {};
+
+const addToGlobalRegistry = (gid: string, metadata: DecoratedClass) => {
+    if (!globalRegistry[gid]) {
+        globalRegistry[gid] = [];
+    }
+    globalRegistry[gid].push(metadata);
+}
+
+export const getGlobalDecoratedClasses = (): DecoratedClass[] => {
+    const list: DecoratedClass[] = [];
+    for (const gid of Object.keys(globalRegistry)) {
+        list.push(...globalRegistry[gid])
+    }
+    return list;
+};
 
 const bundleRegistry: Record<string, DecoratedClass[]> = {};
+
 const addToBundleRegistry = (id: string, metadata: DecoratedClass) => {
     if (!bundleRegistry[id]) {
         bundleRegistry[id] = [];
     }
     bundleRegistry[id].push(metadata);
 }
-export const getBundledMetadata = (id: string) => {
+
+export const getBundledMetadata = (id: string): BundleEntry => {
     if (!bundleRegistry[id]) {
         return {id, metadata: []};
     }
-    return {id, metadata: [... bundleRegistry[id]]}
+    return {id, metadata: [...bundleRegistry[id]]}
+}
+
+export const getManyBundlesMetadata = (ids: string[]): BundleEntry[] => {
+    return ids.map(id => getBundledMetadata(id))
+}
+
+/**
+ * Most common use case -- get the metadata of all bundles as a single list.
+ */
+export const flattenManyBundlesMetadata = (ids: string[]): DecoratedClass[] => {
+    return getManyBundlesMetadata(ids).map(m => m.metadata).reduce((a, b) => a.concat(b), [])
+}
+
+/**
+ * Given an input list of metadata, only return the ones for specified provider. E.g.
+ * `filterMetadataByProvider([{_provider:'http'},{_provider: 'service-container'}], 'http')`
+ * returns `[{_provider:'http'}]`
+ */
+export const filterMetadataByProvider = (metadata: any[], provider: string) => {
+    return metadata.filter(m => m.provider == provider || m._provider == provider)
+}
+
+export const filterByDecorator = (metadata: any[], decorator: string) => {
+    return metadata.filter(m => m.decorator == decorator || m._decorator == decorator)
 }
 
 /**
@@ -92,6 +181,9 @@ export const getBundledMetadata = (id: string) => {
  * process introspection. This is a concrete and easy-to-work-with alternative
  * to reflect-metadata with extra benefits (e.g. annotation libs can expose
  * their metadata via gid).
+ *
+ * This also populates the global registry as well as bundle registry, which you
+ * can access from the above exposed methods.
  */
 export class DecoratedClassBuilder<Clazz extends object = any,
     Method extends object = any,
@@ -101,15 +193,32 @@ export class DecoratedClassBuilder<Clazz extends object = any,
     cur: DecoratedClass = getEmptyDecoratedClass<Clazz,
         Method,
         Property,
-        Parameter>('');
+        Parameter>('', '');
 
     private finalized: DecoratedClass[] = [];
-    private finalizedCalled = false;
     private provider: string;
-    private bundleId = '';
 
     constructor(provider: string) {
         this.provider = provider;
+        decClassInstances.push(this);
+    }
+
+    checkProto(proto: any) {
+        const gid = getOrMakeGidForConstructor(proto);
+        if (this.curGid != gid) {
+            this.cur = getEmptyDecoratedClass<Clazz,
+                Method,
+                Property,
+                Parameter>(gid, this.provider);
+            this.curGid = gid;
+
+            // technically this should be done before next class starts getting processed,
+            // but by doing this upfront (and using the reference to the current meta), we
+            // can avoid boilerplate that needs to process the last seen class (since there's
+            // no decorator-end event, we'd have to manually do this).
+            this.finalized.push(this.cur);
+            addToGlobalRegistry(gid, this.cur);
+        }
     }
 
     initProperty(name: string, isStatic: boolean, metadata: Property, decorator: string) {
@@ -118,7 +227,12 @@ export class DecoratedClassBuilder<Clazz extends object = any,
             target[name] = [];
         }
 
-        target[name].push({...metadata, _type: RecordType.property, _provider: this.provider, _decorator: decorator});
+        target[name].push({
+            ...metadata,
+            _type: RecordType.property,
+            _provider: this.provider,
+            _decorator: decorator
+        });
     }
 
     pushProperty(proto: any, name: string, metadata: Property, decorator = '') {
@@ -141,7 +255,12 @@ export class DecoratedClassBuilder<Clazz extends object = any,
         const isStatic = !!proto.prototype;
         this.checkProto(proto);
         this.initMethod(name, isStatic);
-        const meta = {...metadata, _type: RecordType.method, _provider: this.provider, _decorator: decorator};
+        const meta = {
+            ...metadata,
+            _type: RecordType.method,
+            _provider: this.provider,
+            _decorator: decorator
+        };
         if (isStatic) {
             this.cur.staticMethods[name].metadata.push(meta);
         } else {
@@ -151,8 +270,9 @@ export class DecoratedClassBuilder<Clazz extends object = any,
 
     initParameter(methodName: string, pos: number, isStatic: boolean) {
         this.initMethod(methodName, isStatic);
-        if (!this.cur.methods[methodName].parameters[pos]) {
-            this.cur.methods[methodName].parameters[pos] = [];
+        const target = isStatic ? this.cur.staticMethods : this.cur.methods;
+        if (!target[methodName].parameters[pos]) {
+            target[methodName].parameters[pos] = [];
         }
     }
 
@@ -166,57 +286,33 @@ export class DecoratedClassBuilder<Clazz extends object = any,
         const isStatic = !!proto.prototype;
         this.checkProto(proto);
         this.initParameter(methodName, pos, isStatic);
-        this.cur.methods[methodName].parameters[pos].push({...metadata, _type: RecordType.parameter, _provider: this.provider, _decorator: decorator});
+        const target = isStatic ? this.cur.staticMethods : this.cur.methods;
+        target[methodName].parameters[pos].push({
+            ...metadata,
+            _type: RecordType.parameter,
+            _provider: this.provider,
+            _decorator: decorator
+        });
     }
 
     pushClass(clazz: any, metadata: Clazz, decorator = '') {
         this.checkProto(clazz);
         this.cur.clazz = clazz;
-        this.cur.metadata.push({...metadata, _type: RecordType.clazz, _provider: this.provider, _decorator: decorator});
-
-        const bundleId = (metadata as any).bundleId;
-        if (decorator == 'Bundle' && bundleId) {
-            this.bundleId = bundleId;
-        }
-    }
-
-    checkProto(proto: any) {
-        const gid = getOrMakeGidForConstructor(proto);
-        if (this.curGid != gid) {
-            this.finalize();
-            this.cur = getEmptyDecoratedClass<Clazz,
-                Method,
-                Property,
-                Parameter>(gid);
-            this.curGid = gid;
-        }
-    }
-
-    protected finalize() {
-        if (this.curGid) {
-            this.finalized.push({...this.cur});
-            globalDecoratedClasses.push({...this.cur});
-            if (this.bundleId) {
-                addToBundleRegistry(this.bundleId, {...this.cur})
-            }
-        }
+        this.cur.metadata.push({
+            ...metadata,
+            _type: RecordType.clazz,
+            _provider: this.provider,
+            _decorator: decorator
+        });
     }
 
     getFinalized(): DecoratedClass<Clazz, Method, Parameter, Property>[] {
-        if (!this.finalizedCalled) {
-            this.finalizedCalled = true;
-            this.finalize();
-        }
-
         return [...this.finalized];
     }
-}
 
-/**
- * Given an input list of metadata, only return the ones for specified provider. E.g.
- * `filterMetadataByProvider([{_provider:'http'},{_provider: 'service-container'}], 'http')`
- * returns `[{_provider:'http'}]`
- */
-export const filterMetadataByProvider = (metadata: any[], provider: string) => {
-    metadata.filter(m => m._provider == provider)
+    bundleDeclared(id: string, t: any) {
+        if (this.cur.clazz === t) {
+            addToBundleRegistry(id, this.cur);
+        }
+    }
 }

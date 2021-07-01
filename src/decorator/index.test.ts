@@ -1,6 +1,5 @@
-import {DecoratedClassBuilder, getBundledMetadata} from './index';
+import {BundleDecoratorFactory, DecoratedClassBuilder, getBundledMetadata} from './index';
 import {getOrMakeGidForConstructor, RegistryGidAccessor} from './registry';
-import {BundleDecoratorFactory} from "./bundle";
 
 type ClassMeta = {
 	name: string;

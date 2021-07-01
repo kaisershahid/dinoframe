@@ -3,7 +3,7 @@
 Because decorators aren't an intrinsic part of a class, it's impossible to know what decorators are available for a class without doing two things:
 
 - consistently identifying the class across all the modules whose decorators are applied to it (e.g. `http` and `service-container` by design know nothing about each other);
-- exposing a way to consistently reference other modules' decorators, either in a global registry or as module-specific access points.
+- exposing a way to consistently reference other modules' decorators, either in a global registry or a more specific access point (e.g. `http.getAllDecorators()`)
 
 The `decorator` module has various utilities to accomplish exactly those things.
 
