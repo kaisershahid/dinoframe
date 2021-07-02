@@ -8,7 +8,7 @@ import {DecoratedClass, DecoratedClassBuilder, DecoratedMethod} from "../decorat
  * - those having no dependencies (or dependences that are likely high priority) AND
  * - are a base dependency for large branches of the service tree
  */
-export enum ServicePhases {
+export enum ContainerPhases {
     /** The most vital services necessary to connect the next layer */
     bootstrap = 10000,
     /** Critical db and other data provider initialization */

@@ -196,20 +196,29 @@ export class ServiceContainer implements Container {
         return this.resolve<T>(this.records[gidx]?.id);
     }
 
+    /**
+     * Returns instances matching interface in high-to-low priority order.
+     */
     query<T extends any = any>(matchInterface: string): T[] {
         if (!this.interfaceToRec[matchInterface]) {
             return [];
         }
-        const services:T[] = []
+        const services:[number, T][] = []
+
         this.interfaceToRec[matchInterface]
             .forEach(idx => {
-                const id = this.records[idx].id;
+                const rec = this.records[idx];
+                const id = rec.id;
                 if (this.has(id)) {
-                    services.push(this.resolve(id))
+                    services.push([rec.priority, this.resolve(id)])
                 }
             });
-        // @todo support matchCriteria and only return if services satisfies it
-        return services;
+
+        return services.sort(([p1], [p2]) => {
+            if (p1 < p2) return 1;
+            else if (p1 > p2) return -1;
+            return 0
+        }).map(([p, inst]) => inst)
     }
 
     register(metadata: DecoratedServiceRecord)
