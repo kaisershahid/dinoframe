@@ -9,9 +9,9 @@
  *   - error handler that returns 500 with `{error: "errMsg"}`
  * - registering these services through their bundleIds retrieved from their entrypoint
  */
-import {Dinoframe} from "../../index";
-import {ExpressApp} from "../../http";
-import {UploadController} from "./http-controllers";
+import { Dinoframe } from "../../dinoframe";
+import { ExpressApp } from "../../http";
+import { UploadController } from "./http-controllers";
 
 /*
 CONVENTION: each bundle's entrypoint is either:
@@ -23,24 +23,27 @@ this has 2 advantages:
 2. forces TS to process classes for decoration
  */
 const dino = new Dinoframe([
-    // provides express app and an http server binding to express
-    ExpressApp.discover(),
-    // example controller as a service
-    UploadController.discover(),
-    // a trivial service that the controller depends on
-    require('./services').discover(),
-    require('../../service-container/common/runtime').discover()
+  // provides express app and an http server binding to express
+  ExpressApp.discover(),
+  // example controller as a service
+  UploadController.discover(),
+  // a trivial service that the controller depends on
+  require("./services").discover(),
+  require("../../service-container/common/runtime").discover(),
 ]);
 
 // the only other bit of glue to trigger wiring and server start
-dino.startup().then(() => {
-    console.log('started!')
+dino
+  .startup()
+  .then(() => {
+    console.log("started!");
     const app = dino.getHttpServer();
     app.listen(3000, () => {
-        console.log('listening on 3000');
-    })
-}).catch((e) => {
+      console.log("listening on 3000");
+    });
+  })
+  .catch((e) => {
     console.error(e);
-    console.error('- quitting')
+    console.error("- quitting");
     process.exit(1);
-})
+  });

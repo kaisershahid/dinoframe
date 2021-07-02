@@ -32,24 +32,22 @@ This class is built up with a simple access pattern using `DecoratedClassBuilder
 In order to provide better isolation and flexibility, classes can be grouped together in a **bundle**. You can then retrieve the annotations for just that bundle. Here's how:
 
 ```typescript
-import {DecoratedClassBuilder, getBundledMetadata} from "./index";
-import {BundleDecoratorFactory} from "./bundle";
+import { DecoratedClassBuilder, getBundledMetadata } from "./index";
+import { BundleDecoratorFactory } from "./bundle";
 
 const builder = new DecoratedClassBuilder();
 // first, we'll create our decorator function using BundleDecoratorFactory
-const MyBundle = BundleDecoratorFactory('my', builder);
+const MyBundle = BundleDecoratorFactory("my", builder);
 
 // next, apply the decorator to your classes
 @MyBundle
-class Service1 {
-}
+class Service1 {}
 
 @MyBundle
-class Service2 {
-}
+class Service2 {}
 
 // finally, see the records for your classes
-console.log(getBundledMetadata('my'))
+console.log(getBundledMetadata("my"));
 ```
 
 With bundles, it's easy to only enable the ones you want for your application.
@@ -60,7 +58,7 @@ With bundles, it's easy to only enable the ones you want for your application.
 
 This is mainly a quick reference, but if you know next to nothing about TS decorators, this should save you some time/grief.
 
-If you're familiar with Java annotations, throw that out the window. Decorators don't magically become metadata on the class -- decorators are callback functions that get called once the class is loaded (but before any other part of your code executes). 
+If you're familiar with Java annotations, throw that out the window. Decorators don't magically become metadata on the class -- decorators are callback functions that get called once the class is loaded (but before any other part of your code executes).
 
 ### Quick step-by-step
 
@@ -69,20 +67,19 @@ Let's take this example class (ignore the absence/presence of `()` for now):
 ```typescript
 @Class()
 class MyClass {
-    @Property
-    private _x = true;
-    
-    @Method
-    method(@Arg arg1) {
-    }
-    
-    @Accessor()
-    get x() {
-        return this._x;
-    }
+  @Property
+  private _x = true;
 
-    @Property
-    private _y = false;
+  @Method
+  method(@Arg arg1) {}
+
+  @Accessor()
+  get x() {
+    return this._x;
+  }
+
+  @Property
+  private _y = false;
 }
 ```
 

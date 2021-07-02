@@ -1,16 +1,15 @@
 {
-	"name": "framework",
+	"name": "dinoframe",
+	"version": "0.1.20210701",
 	"scripts": {
-		"exec": "ts-node src/index.ts",
-		"distexec": "ts-node dist/index.js",
-		"test": "--reporters=\"default\" --require ts-node/register '{src,tests}/**/*.test.ts'",
+		"test": "jest",
 		"prepack": "npx webpack",
 		"release": "source release.sh"
 	},
-	"description": "APP_DESCRIPTION",
+	"description": "a flexible, decorator-driven framework for building and managing complex apps",
 	"bin": {},
-	"main": "dist/src/index.js",
-	"types": "dist/src/index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"dependencies": {
 		"ts-node": "^8.8.2",
 		"typescript": "^3.8.3",
@@ -25,7 +24,6 @@
 		"prettier": "^2.0.5",
 		"ts-jest": "^27.0.3"
 	},
-	"version": "0.8.14",
 	"license": "GPL-3.0-or-later",
 	"directories": {
 		"doc": "docs",

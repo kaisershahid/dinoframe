@@ -15,7 +15,7 @@ import {Service, Activate, Deactivate, Inject, Factory, ServiceFactory} from "./
     disabled: false,
 })
 class ExampleService {
-    // if constructor needs injection, you must use @Factory on 
+    // if constructor needs injection, you must use @Factory on
     // static method due to restrictions on decorating constructor
     @Factory()
     constructor(depSvc: any) {
@@ -59,7 +59,7 @@ class ExampleService {
     }
 }
 
-// get/create an instance using `id@factory.id` -- if container sees `@`, it assumes 
+// get/create an instance using `id@factory.id` -- if container sees `@`, it assumes
 // everything to the right references a service factory, and will pass `id` to the
 // getter. this essentially treats the factory as a specialized container. use this
 // to manage things like logger instances.
@@ -72,13 +72,14 @@ class ExampleServiceFactory {
         if (!this.cache[id]) {
             this.cache[id] = new Instance();
         }
-        
+
         return this.cache[id]
     }
 }
 ```
 
 ---
+
 ## Todos
 
 - [ ] define general flow of service management/injection

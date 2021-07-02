@@ -13,24 +13,24 @@ const prototypeOrder: Function[] = [];
 const constructorRegistry: Record<string, Function> = {};
 
 let gcounter = 1;
-let lastGid: string = '';
+let lastGid: string = "";
 let lastTarget: any;
 let lastTargetWasClass = false;
 
 export const findGidForConstructor = (t: any): string => {
-	const isClass = typeof t == 'function';
-	let o: any = t;
-	if (isClass) {
-		o = t.prototype;
-	}
+  const isClass = typeof t == "function";
+  let o: any = t;
+  if (isClass) {
+    o = t.prototype;
+  }
 
-	for (let i = 0; i < prototypeOrder.length; i++) {
-		if (prototypeOrder[i] === o || prototypeOrder[i] === t) {
-			return `${i + 1}`;
-		}
-	}
+  for (let i = 0; i < prototypeOrder.length; i++) {
+    if (prototypeOrder[i] === o || prototypeOrder[i] === t) {
+      return `${i + 1}`;
+    }
+  }
 
-	return '';
+  return "";
 };
 
 /**
@@ -42,63 +42,63 @@ export const findGidForConstructor = (t: any): string => {
  *   - wasLastClass() is true
  */
 export const getOrMakeGidForConstructor = (t: any): string => {
-	const isClass = typeof t == 'function';
-	let o: any = t;
-	if (isClass) {
-		o = t.prototype;
-	}
+  const isClass = typeof t == "function";
+  let o: any = t;
+  if (isClass) {
+    o = t.prototype;
+  }
 
-	// transition from property/method to class
-	if (isClass && !lastTargetWasClass && lastTarget == o) {
-		lastTargetWasClass = true;
-		constructorRegistry[lastGid] = t;
-		return lastGid;
-	}
+  // transition from property/method to class
+  if (isClass && !lastTargetWasClass && lastTarget == o) {
+    lastTargetWasClass = true;
+    constructorRegistry[lastGid] = t;
+    return lastGid;
+  }
 
-	if (o === lastTarget) {
-		return lastGid;
-	}
+  if (o === lastTarget) {
+    return lastGid;
+  }
 
-	let id = findGidForConstructor(t);
-	if (id) {
-		return id;
-	}
+  let id = findGidForConstructor(t);
+  if (id) {
+    return id;
+  }
 
-	id = `${gcounter++}`;
-	lastGid = id;
-	lastTarget = o;
-	prototypeRegistry[id] = o;
-	prototypeOrder.push(o);
-	constructorRegistry[lastGid] = t;
-	lastTargetWasClass = isClass;
+  id = `${gcounter++}`;
+  lastGid = id;
+  lastTarget = o;
+  prototypeRegistry[id] = o;
+  prototypeOrder.push(o);
+  constructorRegistry[lastGid] = t;
+  lastTargetWasClass = isClass;
 
-	return id;
+  return id;
 };
 
 export const getLastGid = (): string => lastGid;
 export const isSameGid = (gid: string) => gid == lastGid;
 export const wasLastClass = () => lastTargetWasClass;
 export const getConstructorForGid = (gid: string): Function =>
-	constructorRegistry[gid];
+  constructorRegistry[gid];
 
 /**
  * If your class decorator extends base class, call this function to associate
  * the gid to the subclass (otherwise it'll always be associated with the base.)
  */
 export const swapConstructorWithSubclass = (subclass: Function) => {
-	if (lastGid) {
-		lastTarget = subclass;
-		prototypeOrder[prototypeOrder.length - 1] = subclass;
-		prototypeRegistry[lastGid] = subclass;
-	}
+  if (lastGid) {
+    lastTarget = subclass;
+    prototypeOrder[prototypeOrder.length - 1] = subclass;
+    prototypeRegistry[lastGid] = subclass;
+  }
 };
 
 export type GidAccessible = {
-	getDecoratorGid(): string;
+  getDecoratorGid(): string;
 };
 
 export const hasGidAccessor = (o: any): o is GidAccessible =>
-	typeof o?.getDecoratorGid === 'function';
+  typeof o?.getDecoratorGid === "function";
 
 /**
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
@@ -110,15 +110,17 @@ export const getGid = (o: any) => RegistryGidAccessor(o).getDecoratorGid();
  * Attaches `getDecoratorGid(): string` to target for convenient access to GID.
  * @todo guard against non-function?
  */
-export const RegistryGidAccessor = <T extends { new(...args: any[]): {} }>(target: T): T & GidAccessible => {
-	if (hasGidAccessor(target)) {
-		return target;
-	}
+export const RegistryGidAccessor = <T extends { new (...args: any[]): {} }>(
+  target: T
+): T & GidAccessible => {
+  if (hasGidAccessor(target)) {
+    return target;
+  }
 
-	const gid = getOrMakeGidForConstructor(target);
-	(target as any).getDecoratorGid = () => {
-		return gid;
-	}
+  const gid = getOrMakeGidForConstructor(target);
+  (target as any).getDecoratorGid = () => {
+    return gid;
+  };
 
-	return target as any;
+  return target as any;
 };
