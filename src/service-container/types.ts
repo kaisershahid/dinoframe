@@ -25,6 +25,12 @@ export type BaseServiceMeta = {
     disabled?: boolean;
     /** Default 0. Higher number means earlier start. Load order on tie. */
     priority?: number;
+    /**
+     * If set and true, derives config id as `config/${serviceId}`. If string, uses string value as
+     * config id. The config service then becomes a dependency and will be injected either as the
+     * first parameter in the constructor OR the first parameter in @Factory method.
+     */
+    injectConfig?: boolean|string
 }
 
 export type ServiceMeta = BaseServiceMeta & {
@@ -50,6 +56,7 @@ export type ServiceRecord = {
     priority: number;
     interfaces: string[];
     clazz: any;
+    injectConfig?: string;
     status: ServiceState;
     factory: string;
     injectableFactory: InjectableList;
@@ -104,6 +111,7 @@ export class DecoratedServiceRecord implements ServiceRecord {
     gid: string = '';
     priority = 0;
     clazz: any;
+    injectConfig?: string;
     interfaces: string[] = [];
     status: ServiceState = ServiceState.registered;
     factory = '';
@@ -117,6 +125,11 @@ export class DecoratedServiceRecord implements ServiceRecord {
         this.provider = classMeta._provider;
         this.id = classMeta.metadata[0].id;
         this.gid = classMeta.metadata[0].gid;
+        const ic = classMeta.metadata[0].injectConfig;
+        if (ic) {
+            this.injectConfig = ic === true ? `config/${this.id}` : ic;
+            this.dependencies[this.injectConfig] = {};
+        }
         this.clazz = classMeta.clazz;
         this.priority = classMeta.metadata[0].priority ?? 0;
         this.interfaces = classMeta.metadata[0].interfaces ?? [];

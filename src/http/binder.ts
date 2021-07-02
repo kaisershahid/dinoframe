@@ -207,7 +207,6 @@ export class HttpDecoratorsBinder {
     }
 
     bind(callback: BoundHandlerCallback) {
-        //const httpServer = this.container.resolve('http')
         const boundList: [
                 RequestHandler | ErrorRequestHandler,
             HandlerConfig, DecoratedClass<ControllerConfig>
