@@ -28,7 +28,8 @@ const dino = new Dinoframe([
     // example controller as a service
     UploadController.discover(),
     // a trivial service that the controller depends on
-    require('./services').discover()
+    require('./services').discover(),
+    require('../../service-container/common/runtime').discover()
 ]);
 
 // the only other bit of glue to trigger wiring and server start

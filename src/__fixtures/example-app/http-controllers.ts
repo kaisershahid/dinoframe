@@ -3,6 +3,7 @@ import {BundleDecoratorFactory} from "../../decorator";
 import {Request} from "express";
 import {Inject, Service} from "../../service-container/decorators";
 import {TrivialService} from "./services";
+import {Config} from "../../service-container/common/runtime";
 
 const ControllerBundle = BundleDecoratorFactory('example-app.controllers')
 
@@ -14,9 +15,18 @@ const ControllerBundle = BundleDecoratorFactory('example-app.controllers')
 @Controller({
     methods: ['post']
 })
-@Service('controller.upload')
+@Service('controller.upload', {
+    injectConfig: true
+})
 export class UploadController {
     private trivial: TrivialService|undefined;
+    private config: Config;
+
+    constructor(config: Config) {
+        this.config = config;
+        console.log('>> got config', config.getAll());
+    }
+
 
     setTrivialService(@Inject({id:'trivial'}) trivial: TrivialService) {
         this.trivial = trivial;

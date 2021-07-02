@@ -15,13 +15,15 @@ export const PROVIDER_ID = 'service-container';
  */
 export class ServiceTracker {
     id: string;
-    depServices: Record<string,any> = {};
-    depInterfaces: Record<string,any> = {};
+    depServices: Record<string, any> = {};
+    depInterfaces: Record<string, any> = {};
     promise: Promise<string>;
-    resolve: (value?: (PromiseLike<any> | any)) => void = (v) => {};
-    reject: (reason?: any) => void = (v) => {};
+    resolve: (value?: (PromiseLike<any> | any)) => void = (v) => {
+    };
+    reject: (reason?: any) => void = (v) => {
+    };
 
-    constructor(id:string) {
+    constructor(id: string) {
         this.id = id;
         this.promise = new Promise((res, rej) => {
             this.resolve = res;
@@ -44,13 +46,13 @@ export class DependencyTracker {
     /**
      * key: the serviceId required; value: a map of serviceIds waiting
      */
-    waitingOnService: Record<string,Record<string,any>> = {};
+    waitingOnService: Record<string, Record<string, any>> = {};
     /**
      * key: the interface required; value: a map of serviceIds -> DependencyMeta
      */
-    waitingOnInterface: Record<string,Record<string,DependencyMeta>> = {};
-    interfaceCount: Record<string,number> = {};
-    serviceMap: Record<string,any> = {};
+    waitingOnInterface: Record<string, Record<string, DependencyMeta>> = {};
+    interfaceCount: Record<string, number> = {};
+    serviceMap: Record<string, any> = {};
     serviceTrackers: Record<string, ServiceTracker> = {}
 
     getTracker(id: string): ServiceTracker {
@@ -116,10 +118,8 @@ export class DependencyTracker {
     }
 
     bindToInterface(interfaze: string, dependentId: string, depMeta: DependencyMeta) {
-        const min = depMeta.matchCriteria?.min === undefined ? 1 :depMeta.matchCriteria.min
-        // console.log('?bindToInterface', {interfaze,dependentId,min})
-        if ((this.interfaceCount[interfaze]??0) < min) {
-            // console.log('--> waiting')
+        const min = depMeta.matchCriteria?.min === undefined ? 1 : depMeta.matchCriteria.min
+        if ((this.interfaceCount[interfaze] ?? 0) < min) {
             this.waitOnInterface(interfaze, dependentId, depMeta);
         }
     }
@@ -132,11 +132,11 @@ export class DependencyTracker {
 }
 
 export class ServiceContainer implements Container {
-    private records: ServiceRecord[] = [];
+    records: Record<string,ServiceRecord> = {};
     private instances: Record<string, any> = {};
-    private recordsById: Record<string, number> = {};
-    private recordsByGid: Record<string, number> = {};
-    private interfaceToRec: Record<string, number[]> = {};
+    recordsById: Record<string, number> = {};
+    recordsByGid: Record<string, string> = {};
+    private interfaceToRec: Record<string, string[]> = {};
     private started: boolean = false;
     private depTracker: DependencyTracker = new DependencyTracker();
 
@@ -148,39 +148,38 @@ export class ServiceContainer implements Container {
      * For bootstrapping purposes, you can directly add an instance to the container.
      * @return True if id doesn't exist, false otherwise
      */
-    registerDirect(id: string, serviceInst: any): boolean {
-        if (this.instances[id]) {
-            return false;
-        }
-
-        // @todo on deactivate, if gid is blank, ignore
-        const pos = this.records.push({
-            id,
-            activator: "",
-            clazz: undefined,
-            deactivator: "",
-            dependencies: [],
-            factory: "",
-            gid: "",
-            injectableFactory: [],
-            injectableMethods: {},
-            interfaces: [],
-            priority: 0,
-            status: ServiceState.activated
-        })
-        this.recordsById[id] = pos;
-        this.instances[id] = serviceInst;
-
-        return true;
-    }
+    // registerDirect(id: string, serviceInst: any): boolean {
+    //     if (this.instances[id]) {
+    //         return false;
+    //     }
+    //
+    //     // @todo on deactivate, if gid is blank, ignore
+    //     const pos = this.records.push({
+    //         id,
+    //         activator: "",
+    //         clazz: undefined,
+    //         deactivator: "",
+    //         dependencies: [],
+    //         factory: "",
+    //         gid: "",
+    //         injectableFactory: [],
+    //         injectableMethods: {},
+    //         interfaces: [],
+    //         priority: 0,
+    //         status: ServiceState.activated
+    //     })
+    //     this.recordsById[id] = pos;
+    //     this.instances[id] = serviceInst;
+    //
+    //     return true;
+    // }
 
     has(id: string) {
         return this.instances[id] !== undefined;
     }
 
     hasGid(gid: string) {
-        const gidx = this.recordsByGid[gid];
-        return this.has(this.records[gidx]?.id);
+        return this.has(this.records[this.recordsByGid[gid]]?.id);
     }
 
     resolve<T extends any = any>(id: string): T {
@@ -192,41 +191,47 @@ export class ServiceContainer implements Container {
     }
 
     resolveGid<T extends any = any>(gid: string): T {
-        const gidx = this.recordsByGid[gid];
-        return this.resolve<T>(this.records[gidx]?.id);
+        const id = this.recordsByGid[gid];
+        return this.resolve<T>(id);
     }
 
+    /**
+     * Returns instances matching interface in high-to-low priority order.
+     */
     query<T extends any = any>(matchInterface: string): T[] {
         if (!this.interfaceToRec[matchInterface]) {
             return [];
         }
-        const services:T[] = []
+        const services: [number, T][] = []
+
         this.interfaceToRec[matchInterface]
             .forEach(idx => {
-                const id = this.records[idx].id;
+                const rec = this.records[idx];
+                const id = rec.id;
                 if (this.has(id)) {
-                    services.push(this.resolve(id))
+                    services.push([rec.priority, this.resolve(id)])
                 }
             });
-        // @todo support matchCriteria and only return if services satisfies it
-        return services;
+
+        return services.sort(([p1], [p2]) => {
+            if (p1 < p2) return 1;
+            else if (p1 > p2) return -1;
+            return 0
+        }).map(([p, inst]) => inst)
     }
 
-    register(metadata: DecoratedServiceRecord)
-    {
+    register(metadata: DecoratedServiceRecord) {
         if (this.recordsById[metadata.id]) {
             return;
         }
 
-        const pos = this.records.length;
-        this.records.push(metadata);
-        this.recordsById[metadata.id] = pos;
-        this.recordsByGid[metadata.gid] = pos;
+        this.records[metadata.id] = metadata;
+        this.recordsByGid[metadata.gid] = metadata.id;
         metadata.interfaces.forEach(int => {
             if (!this.interfaceToRec[int]) {
                 this.interfaceToRec[int] = [];
             }
-            this.interfaceToRec[int].push(pos);
+            this.interfaceToRec[int].push(metadata.id);
         })
 
         if (this.started) {
@@ -239,14 +244,15 @@ export class ServiceContainer implements Container {
             return this;
         }
 
-        const recs = this.records.sort(({priority: p1}, {priority: p2}) => {
+        const recs = Object.values(this.records).sort(({priority: p1}, {priority: p2}) => {
             return p1 < p2 ? 1 : p1 > p2 ? -1 : 0;
         });
 
         const promises: Promise<any>[] = [];
         for (const rec of recs) {
-            if (rec.disabled || !canActivateService(rec.status)) { continue; }
-            // console.log('starting init', rec.id, rec);
+            if (rec.disabled || !canActivateService(rec.status)) {
+                continue;
+            }
             promises.push(this.initServiceFromRecord(rec).then(inst => {
                 rec.status = ServiceState.activated;
                 console.log(`service-container: ${rec.id}`)
@@ -260,8 +266,6 @@ export class ServiceContainer implements Container {
 
                 this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
                 // @todo notify subscribers for interfaces
-
-                // console.log(`>> service activated: ${rec.id}`)
             }))
         }
 
@@ -296,7 +300,6 @@ export class ServiceContainer implements Container {
 
         const st = this.depTracker.getTracker(rec.id);
         if (st.isSatisfied()) {
-            // console.log('! satisfied:', rec.id);
             st.resolve(rec.id);
         }
 
@@ -304,13 +307,12 @@ export class ServiceContainer implements Container {
     }
 
     private wakeUpDependents(depIds: string[]) {
-        const visited: Record<string,boolean> = {};
+        const visited: Record<string, boolean> = {};
         for (const depId of depIds) {
             if (visited[depId]) continue;
             visited[depId] = true;
             const st = this.depTracker.getTracker(depId);
             if (st.isSatisfied()) {
-                // console.log(`@ satisfied: ${depId}`)
                 st.resolve(depId);
             }
         }
@@ -322,8 +324,11 @@ export class ServiceContainer implements Container {
         }
 
         const promises: Promise<any>[] = [];
-        for (const rec of this.records) {
-            if (rec.disabled || canDeactivateService(rec.status)) { continue; };
+        for (const rec of Object.values(this.records)) {
+            if (rec.disabled || canDeactivateService(rec.status)) {
+                continue;
+            }
+            ;
             promises.push(this.deactivateService(rec, this.instances[rec.id]).catch(e => {
                 console.error(`failed to successfully deactivate: ${rec.id}`, e);
             }).finally(() => {
@@ -338,11 +343,18 @@ export class ServiceContainer implements Container {
 
     protected makeInstance(rec: ServiceRecord): any {
         const clazz = rec.clazz;
+        const config = rec.injectConfig ? this.resolve(rec.injectConfig) : undefined;
         if (rec.factory) {
-            return clazz[rec.factory](...this.getDependenciesAsArgs(rec.injectableFactory));
+            if (config) {
+                return clazz[rec.factory](config, ...this.getDependenciesAsArgs(rec.injectableFactory));
+            } else {
+                return clazz[rec.factory](...this.getDependenciesAsArgs(rec.injectableFactory));
+            }
+        } else if (config) {
+            return new clazz(config);
+        } else {
+            return new clazz();
         }
-
-        return new clazz();
     }
 
     protected processInjections(rec: ServiceRecord, inst: any) {
