@@ -9,7 +9,7 @@
  *   - error handler that returns 500 with `{error: "errMsg"}`
  * - registering these services through their bundleIds retrieved from their entrypoint
  */
-import {Dinoframe} from "../../index";
+import {Dinoframe} from "../../dinoframe";
 import {ExpressApp} from "../../http";
 import {UploadController} from "./http-controllers";
 

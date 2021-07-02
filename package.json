@@ -1,16 +1,16 @@
 {
 	"name": "framework",
 	"scripts": {
-		"exec": "ts-node src/index.ts",
+		"exec": "ts-node src/dinoframe.ts",
 		"distexec": "ts-node dist/index.js",
-		"test": "--reporters=\"default\" --require ts-node/register '{src,tests}/**/*.test.ts'",
+		"test": "jest",
 		"prepack": "npx webpack",
 		"release": "source release.sh"
 	},
-	"description": "APP_DESCRIPTION",
+	"description": "a flexible, decorator-driven framework for building and managing complex apps",
 	"bin": {},
-	"main": "dist/src/index.js",
-	"types": "dist/src/index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"dependencies": {
 		"ts-node": "^8.8.2",
 		"typescript": "^3.8.3",
