@@ -1,72 +1,76 @@
-import {Activate, Deactivate, Inject, Service} from "../decorators";
+import { Activate, Deactivate, Inject, Service } from "../decorators";
 
 interface Actor {
-    getName(): string;
+  getName(): string;
 
-    getRole(): string;
+  getRole(): string;
 }
 
-@Service('tobias', {
-    interfaces: ['actor']
+@Service("tobias", {
+  interfaces: ["actor"],
 })
 export class TobiasTheActor implements Actor {
-    getName() {
-        return 'tobias';
-    }
+  getName() {
+    return "tobias";
+  }
 
-    getRole() {
-        return 'actor';
-    }
+  getRole() {
+    return "actor";
+  }
 }
 
-@Service('gob', {
-    interfaces: ['actor'],
-    priority: 100
+@Service("gob", {
+  interfaces: ["actor"],
+  priority: 100,
 })
 export class GobTheMagician implements Actor {
-    activated = false;
+  activated = false;
 
-    getName() {
-        return `gob ${this.activated ? 'wake' : 'sleep'}`;
-    }
+  getName() {
+    return `gob ${this.activated ? "wake" : "sleep"}`;
+  }
 
-    getRole() {
-        return 'magician';
-    }
+  getRole() {
+    return "magician";
+  }
 
-    @Activate
-    activate() {
-        console.log("!!! activatng");
-        this.activated = true;
-    }
+  @Activate
+  activate() {
+    console.log("!!! activatng");
+    this.activated = true;
+  }
 
-    @Deactivate
-    deactivate() {
-        this.activated = false;
-    }
+  @Deactivate
+  deactivate() {
+    this.activated = false;
+  }
 }
 
-@Service('agent', {
-    priority: -1 // ensures actors load first
+@Service("agent", {
+  priority: -1, // ensures actors load first
 })
 export class Agent {
-    actors: Actor[] = [];
-    rollCall: string[] = [];
+  actors: Actor[] = [];
+  rollCall: string[] = [];
 
-    setActors(@Inject({matchInterface: 'actor', matchCriteria: {min: 2}}) actors: Actor[]) {
-        this.actors = actors;
-    }
+  setActors(
+    @Inject({ matchInterface: "actor", matchCriteria: { min: 2 } })
+    actors: Actor[]
+  ) {
+    this.actors = actors;
+  }
 
-    @Deactivate
-    deactivate() {
-        this.rollCall = [];
-        this.actors = [];
-    }
+  @Deactivate
+  deactivate() {
+    this.rollCall = [];
+    this.actors = [];
+  }
 
-    getRoleCall() {
-        return this.actors.map(actor => `my name is ${actor.getName()} and i'm a ${actor.getRole()}`);
-    }
+  getRoleCall() {
+    return this.actors.map(
+      (actor) => `my name is ${actor.getName()} and i'm a ${actor.getRole()}`
+    );
+  }
 
-    static discover() {
-    }
+  static discover() {}
 }

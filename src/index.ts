@@ -1,1 +1,1 @@
-import {Dinoframe} from "./dinoframe";
+import { Dinoframe } from "./dinoframe";
