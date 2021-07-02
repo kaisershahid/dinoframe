@@ -1,8 +1,7 @@
 {
-	"name": "framework",
+	"name": "dinoframe",
+	"version": "0.1.20210701",
 	"scripts": {
-		"exec": "ts-node src/dinoframe.ts",
-		"distexec": "ts-node dist/index.js",
 		"test": "jest",
 		"prepack": "npx webpack",
 		"release": "source release.sh"
@@ -25,7 +24,6 @@
 		"prettier": "^2.0.5",
 		"ts-jest": "^27.0.3"
 	},
-	"version": "0.8.14",
 	"license": "GPL-3.0-or-later",
 	"directories": {
 		"doc": "docs",
