@@ -119,9 +119,7 @@ export class DependencyTracker {
 
     bindToInterface(interfaze: string, dependentId: string, depMeta: DependencyMeta) {
         const min = depMeta.matchCriteria?.min === undefined ? 1 : depMeta.matchCriteria.min
-        // console.log('?bindToInterface', {interfaze,dependentId,min})
         if ((this.interfaceCount[interfaze] ?? 0) < min) {
-            // console.log('--> waiting')
             this.waitOnInterface(interfaze, dependentId, depMeta);
         }
     }
@@ -181,7 +179,6 @@ export class ServiceContainer implements Container {
     }
 
     hasGid(gid: string) {
-        // console.log('??? ', gid, gidx, this.records[gidx]?.id)
         return this.has(this.records[this.recordsByGid[gid]]?.id);
     }
 
@@ -230,8 +227,6 @@ export class ServiceContainer implements Container {
 
         this.records[metadata.id] = metadata;
         this.recordsByGid[metadata.gid] = metadata.id;
-        // console.log('ADD ', pos, metadata.id, metadata.gid, ' // ', this.recordsByGid[metadata.gid])
-        // console.log(this.recordsByGid)
         metadata.interfaces.forEach(int => {
             if (!this.interfaceToRec[int]) {
                 this.interfaceToRec[int] = [];
@@ -258,7 +253,6 @@ export class ServiceContainer implements Container {
             if (rec.disabled || !canActivateService(rec.status)) {
                 continue;
             }
-            // console.log('starting init', rec.id, rec);
             promises.push(this.initServiceFromRecord(rec).then(inst => {
                 rec.status = ServiceState.activated;
                 console.log(`service-container: ${rec.id}`)
@@ -272,7 +266,6 @@ export class ServiceContainer implements Container {
 
                 this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
                 // @todo notify subscribers for interfaces
-                // console.log(`>> service activated: ${rec.id}`)
             }))
         }
 
@@ -307,7 +300,6 @@ export class ServiceContainer implements Container {
 
         const st = this.depTracker.getTracker(rec.id);
         if (st.isSatisfied()) {
-            // console.log('! satisfied:', rec.id);
             st.resolve(rec.id);
         }
 
@@ -321,7 +313,6 @@ export class ServiceContainer implements Container {
             visited[depId] = true;
             const st = this.depTracker.getTracker(depId);
             if (st.isSatisfied()) {
-                // console.log(`@ satisfied: ${depId}`)
                 st.resolve(depId);
             }
         }
