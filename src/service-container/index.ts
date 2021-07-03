@@ -166,6 +166,7 @@ export class ServiceFactoryHelper implements FactoryContainer {
 
   has(id: string): boolean {
     const [subId, factoryId] = id.split("@");
+    this.assertIsFactory(factoryId);
     if (!this.container.has(factoryId)) {
       return false;
     }
@@ -175,13 +176,20 @@ export class ServiceFactoryHelper implements FactoryContainer {
 
   resolve<T>(id: string): T {
     const [subId, factoryId] = id.split("@");
+    this.assertIsFactory(factoryId);
     const svc = this.container
       .resolve<FactoryContainer>(factoryId)
       .resolve(subId);
     if (!svc) {
-      throw new Error(`${id}: service not found`); // @todo specific error
+      throw new Error(`${id}: service not found`);
     }
     return svc;
+  }
+
+  private assertIsFactory(id: string) {
+    if (!this.container.isFactory(id)) {
+      throw new Error(`${id}: not a factory`)
+    }
   }
 }
 
@@ -455,5 +463,9 @@ export class ServiceContainer implements Container {
     if (rec.deactivator) {
       return Promise.resolve(inst[rec.deactivator]());
     }
+  }
+
+  isFactory(factoryId: string) {
+    return !!this.records[factoryId].isFactory;
   }
 }
