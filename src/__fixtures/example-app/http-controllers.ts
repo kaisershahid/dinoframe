@@ -8,7 +8,7 @@ import {
 import { BundleDecoratorFactory } from "../../decorator";
 import { Request } from "express";
 import { Inject, Service } from "../../service-container/decorators";
-import { TrivialService } from "./services";
+import { Logger, TrivialService } from "./services";
 import { Config } from "../../service-container/common/runtime";
 
 const ControllerBundle = BundleDecoratorFactory("example-app.controllers");
@@ -27,6 +27,7 @@ const ControllerBundle = BundleDecoratorFactory("example-app.controllers");
 export class UploadController {
   private trivial: TrivialService | undefined;
   private config: Config;
+  private logger: Logger = undefined as any;
 
   constructor(config: Config) {
     this.config = config;
@@ -35,6 +36,10 @@ export class UploadController {
 
   setTrivialService(@Inject({ id: "trivial" }) trivial: TrivialService) {
     this.trivial = trivial;
+  }
+
+  setLogger(@Inject({ id: "controller@logger.logger" }) logger: Logger) {
+    this.logger = logger;
   }
 
   @Route({ path: "/upload" })
@@ -49,6 +54,13 @@ export class UploadController {
 
   @Middleware({ priority: 100 })
   checkAuthorization(req: Request, res, next) {
+    this.logger.log(
+      `incoming: ${req.method} ${req.path} ${JSON.stringify(
+        req.headers,
+        null,
+        2
+      )}`
+    );
     if (req.headers["throw-error"] == "true") {
       next(new Error("throw-error set in header"));
     } else {
