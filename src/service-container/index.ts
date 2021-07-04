@@ -5,6 +5,7 @@ import {
   Container,
   ServiceRecord,
   ServiceState,
+  FactoryContainer,
 } from "./types";
 
 export const PROVIDER_ID = "service-container";
@@ -66,12 +67,14 @@ export class DependencyTracker {
   }
 
   waitOnService(dependencyId: string, dependentId: string) {
+    // @todo figure out why this is happening!
     if (!this.waitingOnService[dependencyId]) {
       this.waitingOnService[dependencyId] = {};
     }
 
     this.waitingOnService[dependencyId][dependentId] = 1;
     this.getTracker(dependentId).depServices[dependencyId] = true;
+    console.log(`waitOnService: ${dependentId} -> ${dependencyId}`);
   }
 
   waitOnInterface(
@@ -84,15 +87,18 @@ export class DependencyTracker {
     }
     this.waitingOnInterface[interfaze][waitingId] = depMeta;
     this.getTracker(waitingId).depInterfaces[interfaze] = true;
+    console.log(`waitOnInterface: ${waitingId} -> ${interfaze}`);
   }
 
   serviceAvailable(id: string) {
     if (!this.waitingOnService[id]) {
+      console.log(`serviceAvailable: ${id} -> []`);
       return [];
     }
 
     this.serviceMap[id] = 1;
     const notify = Object.keys(this.waitingOnService[id]);
+    console.log(`serviceAvailable: ${id} -> ${notify.join(", ")}`);
     delete this.waitingOnService[id];
     for (const sid of notify) {
       delete this.serviceTrackers[sid].depServices[id];
@@ -102,6 +108,7 @@ export class DependencyTracker {
 
   interfaceAvailable(interfaze: string) {
     if (!this.waitingOnInterface[interfaze]) {
+      console.log(`interfaceAvailable: ${interfaze} -> []`);
       return [];
     }
 
@@ -121,6 +128,8 @@ export class DependencyTracker {
       }
     }
 
+    console.log(`serviceAvailable: ${interfaze} -> ${notify.join(", ")}`);
+
     return notify;
   }
 
@@ -133,60 +142,77 @@ export class DependencyTracker {
       depMeta.matchCriteria?.min === undefined ? 1 : depMeta.matchCriteria.min;
     if ((this.interfaceCount[interfaze] ?? 0) < min) {
       this.waitOnInterface(interfaze, dependentId, depMeta);
+    } else {
+      console.log(`bindToInterface: ${dependentId} -> ${interfaze}`);
     }
   }
 
   bindToService(dependencyId: string, dependentId: string) {
     if (!this.serviceMap[dependencyId]) {
-      this.waitOnService(dependencyId, dependentId);
+      const [subId, factoryId] = dependencyId.split("@");
+      this.waitOnService(factoryId ?? dependencyId, dependentId);
+    } else {
+      console.log(`bindToService: ${dependentId} -> ${dependencyId}`);
+    }
+  }
+}
+
+export class ServiceFactoryHelper implements FactoryContainer {
+  private container: ServiceContainer;
+
+  constructor(container: ServiceContainer) {
+    this.container = container;
+  }
+
+  has(id: string): boolean {
+    const [subId, factoryId] = id.split("@");
+    this.assertIsFactory(factoryId);
+    if (!this.container.has(factoryId)) {
+      return false;
+    }
+
+    return this.container.resolve<FactoryContainer>(factoryId).has(subId);
+  }
+
+  resolve<T>(id: string): T {
+    const [subId, factoryId] = id.split("@");
+    this.assertIsFactory(factoryId);
+    const svc = this.container
+      .resolve<FactoryContainer>(factoryId)
+      .resolve(subId);
+    if (!svc) {
+      throw new Error(`${id}: service not found`);
+    }
+    return svc;
+  }
+
+  private assertIsFactory(id: string) {
+    if (!this.container.isFactory(id)) {
+      throw new Error(`${id}: not a factory`)
     }
   }
 }
 
 export class ServiceContainer implements Container {
-  records: Record<string, ServiceRecord> = {};
+  private records: Record<string, ServiceRecord> = {};
   private instances: Record<string, any> = {};
-  recordsById: Record<string, number> = {};
-  recordsByGid: Record<string, string> = {};
+  private recordsById: Record<string, number> = {};
+  private recordsByGid: Record<string, string> = {};
   private interfaceToRec: Record<string, string[]> = {};
   private started: boolean = false;
   private depTracker: DependencyTracker = new DependencyTracker();
+  private factoryHelper: ServiceFactoryHelper;
 
   constructor(initialRecords: DecoratedServiceRecord[] = []) {
     initialRecords.forEach((r) => this.register(r));
+    this.factoryHelper = new ServiceFactoryHelper(this);
   }
 
-  /**
-   * For bootstrapping purposes, you can directly add an instance to the container.
-   * @return True if id doesn't exist, false otherwise
-   */
-  // registerDirect(id: string, serviceInst: any): boolean {
-  //     if (this.instances[id]) {
-  //         return false;
-  //     }
-  //
-  //     // @todo on deactivate, if gid is blank, ignore
-  //     const pos = this.records.push({
-  //         id,
-  //         activator: "",
-  //         clazz: undefined,
-  //         deactivator: "",
-  //         dependencies: [],
-  //         factory: "",
-  //         gid: "",
-  //         injectableFactory: [],
-  //         injectableMethods: {},
-  //         interfaces: [],
-  //         priority: 0,
-  //         status: ServiceState.activated
-  //     })
-  //     this.recordsById[id] = pos;
-  //     this.instances[id] = serviceInst;
-  //
-  //     return true;
-  // }
-
   has(id: string) {
+    if (id.includes("@")) {
+      return this.factoryHelper.has(id);
+    }
+
     return this.instances[id] !== undefined;
   }
 
@@ -195,7 +221,12 @@ export class ServiceContainer implements Container {
   }
 
   resolve<T extends any = any>(id: string): T {
+    if (id.includes("@")) {
+      return this.factoryHelper.resolve<T>(id);
+    }
+
     if (!this.has(id)) {
+      console.log(`x resolve: fail ${id}`);
       throw new Error(`${id}: service not found`); // @todo specific error
     }
 
@@ -271,7 +302,7 @@ export class ServiceContainer implements Container {
       promises.push(
         this.initServiceFromRecord(rec).then((inst) => {
           rec.status = ServiceState.activated;
-          console.log(`service-container: ${rec.id}`);
+          console.log(`! startup: ${rec.id} AVAILABLE`);
           const notifyServices = this.depTracker.serviceAvailable(rec.id);
           const interfaces: string[] = [];
           const notifyInterfaces = rec.interfaces
@@ -309,13 +340,23 @@ export class ServiceContainer implements Container {
     rec: ServiceRecord,
     tracker: ServiceTracker
   ) {
+    console.log(
+      `waitOnDependencies: ${rec.id} -> ${Object.keys(rec.dependencies).join(
+        ", "
+      )} `
+    );
     for (const dep of Object.keys(rec.dependencies)) {
       if (dep.startsWith("#")) {
         const interfaze = dep.substring(1);
         const matchCriteria = rec.dependencies[dep];
         this.depTracker.bindToInterface(interfaze, rec.id, { matchCriteria });
       } else {
-        this.depTracker.bindToService(dep, rec.id);
+        // unlike a normal service ref, a factory service ref should only depend on the root factory
+        // and not a specific sub-service -- this is because sub-services have unknown cardinality.
+        // we could work in extra checks to force creation of required sub-services once factory is
+        // available, but for now using this approach
+        const [subId, factoryId] = dep.split("@");
+        this.depTracker.bindToService(factoryId ? factoryId : dep, rec.id);
       }
     }
 
@@ -334,6 +375,7 @@ export class ServiceContainer implements Container {
       visited[depId] = true;
       const st = this.depTracker.getTracker(depId);
       if (st.isSatisfied()) {
+        console.log(`. wakeUpDependents: ${depId} RESOLVED`);
         st.resolve(depId);
       }
     }
@@ -421,5 +463,9 @@ export class ServiceContainer implements Container {
     if (rec.deactivator) {
       return Promise.resolve(inst[rec.deactivator]());
     }
+  }
+
+  isFactory(factoryId: string) {
+    return !!this.records[factoryId].isFactory;
   }
 }

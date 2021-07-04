@@ -35,6 +35,7 @@ export type BaseServiceMeta = {
    * first parameter in the constructor OR the first parameter in @Factory method.
    */
   injectConfig?: boolean | string;
+  isFactory?: boolean;
 };
 
 export type ServiceMeta = BaseServiceMeta & {
@@ -60,6 +61,7 @@ export type ServiceRecord = {
   priority: number;
   interfaces: string[];
   clazz: any;
+  isFactory?: boolean;
   injectConfig?: string;
   status: ServiceState;
   factory: string;
@@ -121,6 +123,7 @@ export class DecoratedServiceRecord implements ServiceRecord {
   gid: string = "";
   priority = 0;
   clazz: any;
+  isFactory?: boolean;
   injectConfig?: string;
   interfaces: string[] = [];
   status: ServiceState = ServiceState.registered;
@@ -132,9 +135,16 @@ export class DecoratedServiceRecord implements ServiceRecord {
   injectableMethods: Record<string, InjectableList> = {};
 
   constructor(classMeta: ClassServiceMetadata) {
+    if (classMeta.metadata.length != 1) {
+      throw new Error(
+        `expected exactly 1 decoration, got: ${classMeta.metadata.length}`
+      );
+    }
+
     this.provider = classMeta._provider;
     this.id = classMeta.metadata[0].id;
     this.gid = classMeta.metadata[0].gid;
+    this.isFactory = classMeta.metadata[0]._decorator == "ServiceFactory";
     const ic = classMeta.metadata[0].injectConfig;
     if (ic) {
       this.injectConfig = ic === true ? `config/${this.id}` : ic;
@@ -214,3 +224,8 @@ export interface Container {
   // unregister(id: string);
   // newScope(): ServiceContainer;
 }
+
+/**
+ * A partial container interface implemented by @ServiceFactory instances.
+ */
+export interface FactoryContainer extends Pick<Container, "has" | "resolve"> {}

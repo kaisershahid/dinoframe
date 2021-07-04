@@ -9,6 +9,10 @@ import { getOrMakeGidForConstructor } from "../decorator/registry";
 
 const builder = getServiceMetadataBuilder();
 
+/**
+ * Class -- marks the class as a singleton service. If `isFactory` is true, service is treated as
+ * a sub-service factory. Don't confuse with `@Factory`.
+ */
 export const Service = (id: string, meta: BaseServiceMeta = {}) => {
   return (clazz: any) => {
     builder.pushClass(
@@ -20,8 +24,8 @@ export const Service = (id: string, meta: BaseServiceMeta = {}) => {
 };
 
 /**
- * Method -- if defined, expected to return service instance. Necessary to mark
- * if you need to inject dependencies via constructor.
+ * Method (static) -- if defined, expected to return service instance. Necessary if you prefer to use
+ * constructor injection.
  */
 export const Factory = (
   target: any,
@@ -86,12 +90,6 @@ export const Inject = (params: DependencyMeta) => {
     builder.pushParameter(target, name, pos, { ...params }, "Inject");
   };
 };
-
-/**
- * Class -- marks a service as a factory for creating scoped instances.
- * @todo
- */
-export const ServiceFactory = (id) => {};
 
 /**
  * Returns ALL processed @Service as DecoratedServiceRecord instances
