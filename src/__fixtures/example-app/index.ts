@@ -30,6 +30,7 @@ const dino = new Dinoframe([
   // a trivial service that the controller depends on
   require("./services").discover(),
   require("../../service-container/common/runtime").discover(),
+  require("../../service-container/common/logging").discover()
 ]);
 
 // the only other bit of glue to trigger wiring and server start

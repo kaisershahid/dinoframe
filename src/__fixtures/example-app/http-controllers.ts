@@ -8,8 +8,9 @@ import {
 import { BundleDecoratorFactory } from "../../decorator";
 import { Request } from "express";
 import { Inject, Service } from "../../service-container/decorators";
-import { Logger, TrivialService } from "./services";
+import { TrivialService } from "./services";
 import { Config } from "../../service-container/common/runtime";
+import {Logger} from "../../service-container/common/logging";
 
 const ControllerBundle = BundleDecoratorFactory("example-app.controllers");
 
@@ -54,7 +55,7 @@ export class UploadController {
 
   @Middleware({ priority: 100 })
   checkAuthorization(req: Request, res, next) {
-    this.logger.log(
+    this.logger.info(
       `incoming: ${req.method} ${req.path} ${JSON.stringify(
         req.headers,
         null,

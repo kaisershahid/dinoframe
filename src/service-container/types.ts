@@ -144,7 +144,7 @@ export class DecoratedServiceRecord implements ServiceRecord {
     this.provider = classMeta._provider;
     this.id = classMeta.metadata[0].id;
     this.gid = classMeta.metadata[0].gid;
-    this.isFactory = classMeta.metadata[0]._decorator == "ServiceFactory";
+    this.isFactory = classMeta.metadata[0].isFactory;
     const ic = classMeta.metadata[0].injectConfig;
     if (ic) {
       this.injectConfig = ic === true ? `config/${this.id}` : ic;

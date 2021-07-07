@@ -7,6 +7,7 @@ import {
   ServiceState,
   FactoryContainer,
 } from "./types";
+import {Logger, LoggerFactory, LoggerLevel} from "./common/logging";
 
 export const PROVIDER_ID = "service-container";
 
@@ -43,6 +44,10 @@ export const canActivateService = (status: ServiceState) =>
 export const canDeactivateService = (status: ServiceState) =>
   status == ServiceState.activated;
 
+const lf = LoggerFactory.getSingleton();
+const logger = lf.getLogger("service-container");
+const dtLogger = lf.getLogger("service-container.deptrack");
+
 /**
  * Manages dependency tracking for entire container.
  */
@@ -74,7 +79,7 @@ export class DependencyTracker {
 
     this.waitingOnService[dependencyId][dependentId] = 1;
     this.getTracker(dependentId).depServices[dependencyId] = true;
-    console.log(`waitOnService: ${dependentId} -> ${dependencyId}`);
+    dtLogger.info(`waitOnService: ${dependentId} -> ${dependencyId}`);
   }
 
   waitOnInterface(
@@ -87,18 +92,18 @@ export class DependencyTracker {
     }
     this.waitingOnInterface[interfaze][waitingId] = depMeta;
     this.getTracker(waitingId).depInterfaces[interfaze] = true;
-    console.log(`waitOnInterface: ${waitingId} -> ${interfaze}`);
+    dtLogger.info(`waitOnInterface: ${waitingId} -> ${interfaze}`);
   }
 
   serviceAvailable(id: string) {
     if (!this.waitingOnService[id]) {
-      console.log(`serviceAvailable: ${id} -> []`);
+      dtLogger.info(`serviceAvailable: ${id} -> NO_WAITING_DEPS`);
       return [];
     }
 
     this.serviceMap[id] = 1;
     const notify = Object.keys(this.waitingOnService[id]);
-    console.log(`serviceAvailable: ${id} -> ${notify.join(", ")}`);
+    dtLogger.info(`serviceAvailable: ${id} ->`, notify);
     delete this.waitingOnService[id];
     for (const sid of notify) {
       delete this.serviceTrackers[sid].depServices[id];
@@ -108,7 +113,7 @@ export class DependencyTracker {
 
   interfaceAvailable(interfaze: string) {
     if (!this.waitingOnInterface[interfaze]) {
-      console.log(`interfaceAvailable: ${interfaze} -> []`);
+      dtLogger.info(`interfaceAvailable: ${interfaze} -> NO_WAITING_DEPS`);
       return [];
     }
 
@@ -128,7 +133,7 @@ export class DependencyTracker {
       }
     }
 
-    console.log(`serviceAvailable: ${interfaze} -> ${notify.join(", ")}`);
+    dtLogger.info(`serviceAvailable: ${interfaze} ->`, notify);
 
     return notify;
   }
@@ -143,7 +148,7 @@ export class DependencyTracker {
     if ((this.interfaceCount[interfaze] ?? 0) < min) {
       this.waitOnInterface(interfaze, dependentId, depMeta);
     } else {
-      console.log(`bindToInterface: ${dependentId} -> ${interfaze}`);
+      dtLogger.info(`bindToInterface: ${dependentId} -> ${interfaze}`);
     }
   }
 
@@ -152,7 +157,7 @@ export class DependencyTracker {
       const [subId, factoryId] = dependencyId.split("@");
       this.waitOnService(factoryId ?? dependencyId, dependentId);
     } else {
-      console.log(`bindToService: ${dependentId} -> ${dependencyId}`);
+      dtLogger.info(`bindToService: ${dependentId} -> ${dependencyId}`);
     }
   }
 }
@@ -202,10 +207,12 @@ export class ServiceContainer implements Container {
   private started: boolean = false;
   private depTracker: DependencyTracker = new DependencyTracker();
   private factoryHelper: ServiceFactoryHelper;
+  private logger: Logger;
 
   constructor(initialRecords: DecoratedServiceRecord[] = []) {
     initialRecords.forEach((r) => this.register(r));
     this.factoryHelper = new ServiceFactoryHelper(this);
+    this.logger = logger;
   }
 
   has(id: string) {
@@ -226,7 +233,6 @@ export class ServiceContainer implements Container {
     }
 
     if (!this.has(id)) {
-      console.log(`x resolve: fail ${id}`);
       throw new Error(`${id}: service not found`); // @todo specific error
     }
 
@@ -302,7 +308,7 @@ export class ServiceContainer implements Container {
       promises.push(
         this.initServiceFromRecord(rec).then((inst) => {
           rec.status = ServiceState.activated;
-          console.log(`! startup: ${rec.id} AVAILABLE`);
+          this.logger.info(`! startup: ${rec.id} AVAILABLE`);
           const notifyServices = this.depTracker.serviceAvailable(rec.id);
           const interfaces: string[] = [];
           const notifyInterfaces = rec.interfaces
@@ -340,12 +346,11 @@ export class ServiceContainer implements Container {
     rec: ServiceRecord,
     tracker: ServiceTracker
   ) {
-    console.log(
-      `waitOnDependencies: ${rec.id} -> ${Object.keys(rec.dependencies).join(
-        ", "
-      )} `
+    const deps = Object.keys(rec.dependencies);
+    this.logger.info(
+      `waitOnDependencies: ${rec.id} ->`, deps.length > 1 ? deps : 'NO_DEPS'
     );
-    for (const dep of Object.keys(rec.dependencies)) {
+    for (const dep of deps) {
       if (dep.startsWith("#")) {
         const interfaze = dep.substring(1);
         const matchCriteria = rec.dependencies[dep];
@@ -375,7 +380,7 @@ export class ServiceContainer implements Container {
       visited[depId] = true;
       const st = this.depTracker.getTracker(depId);
       if (st.isSatisfied()) {
-        console.log(`. wakeUpDependents: ${depId} RESOLVED`);
+        this.logger.info(`. wakeUpDependents: ${depId} RESOLVED`);
         st.resolve(depId);
       }
     }
@@ -394,7 +399,7 @@ export class ServiceContainer implements Container {
       promises.push(
         this.deactivateService(rec, this.instances[rec.id])
           .catch((e) => {
-            console.error(`failed to successfully deactivate: ${rec.id}`, e);
+            this.logger.error(`failed to successfully deactivate: ${rec.id}`, e);
           })
           .finally(() => {
             delete this.instances[rec.id];
