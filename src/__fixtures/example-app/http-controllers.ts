@@ -39,7 +39,7 @@ export class UploadController {
     this.trivial = trivial;
   }
 
-  setLogger(@Inject({ id: "controller@logger.logger" }) logger: Logger) {
+  setLogger(@Inject({ id: "controller@logger.loggerFactory" }) logger: Logger) {
     this.logger = logger;
   }
 

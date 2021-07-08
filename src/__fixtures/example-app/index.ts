@@ -12,6 +12,8 @@
 import { Dinoframe } from "../../dinoframe";
 import { ExpressApp } from "../../http";
 import { UploadController } from "./http-controllers";
+import {ServiceContainer} from "../../service-container";
+import {DecoratedServiceRecord} from "../../service-container/types";
 
 /*
 CONVENTION: each bundle's entrypoint is either:
@@ -33,6 +35,20 @@ const dino = new Dinoframe([
   require("../../service-container/common/logging").discover()
 ]);
 
+if (process.argv[2] == '--debug') {
+  const status = ServiceContainer.analyzeDependencies(dino.getMetadataForBundles().map(c => new DecoratedServiceRecord(c)));
+  for (const rec of status) {
+    if (rec.status == 'RESOLVED') {
+      console.log(`✅ ${rec.status} ${rec.id}`);
+    } else if (rec.status == 'DISABLED') {
+      console.log(`⚠️ ${rec.status} ${rec.id}`)
+    } else {
+      console.log(`🚫 ${rec.status} ${rec.id} -> ${rec.unresolvedDeps.join('; ')}`)
+    }
+  }
+  process.exit();
+}
+
 // the only other bit of glue to trigger wiring and server start
 dino
   .startup()
@@ -48,3 +64,4 @@ dino
     console.error("- quitting");
     process.exit(1);
   });
+console.log(`💡 if your app doesn't start as expected, re-run with --debug to see what dependencies are not resolved`)

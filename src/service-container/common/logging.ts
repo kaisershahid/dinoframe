@@ -257,7 +257,7 @@ export class LoggerFactory implements FactoryContainer {
   // @todo fixedLoggers -- supports logger.logger interface services
 
   setWriters(
-    @Inject({matchInterface: INTERFACE_LOG_WRITER})
+    @Inject({matchInterface: INTERFACE_LOG_WRITER, matchCriteria: {min: 0}})
       writers: LoggerWriter[]
   ) {
     for (const writer of writers) {

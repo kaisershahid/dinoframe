@@ -43,9 +43,13 @@ export class Dinoframe {
     );
   }
 
+  getMetadataForBundles() {
+    return flattenManyBundlesMetadata(this.bundleIds);
+  }
+
   async startup() {
     // 1. get only the records for the given bundles
-    const meta = flattenManyBundlesMetadata(this.bundleIds);
+    const meta = this.getMetadataForBundles();
     // 2. extract service-container records from subset of bundle meta
     const services = filterMetadataByProvider(
       meta,
@@ -55,7 +59,12 @@ export class Dinoframe {
       this._serviceContainer.register(new DecoratedServiceRecord(meta));
     });
 
-    await this._serviceContainer.startup();
+    try {
+      await this._serviceContainer.startup();
+    } catch (e) {
+      console.error(e);
+      throw e;
+    }
 
     // 3. now register http stuff after services load
     const controllers = filterMetadataByProvider(
