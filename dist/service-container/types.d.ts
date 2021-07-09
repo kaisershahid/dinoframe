@@ -29,6 +29,7 @@ export declare type BaseServiceMeta = {
      * first parameter in the constructor OR the first parameter in @Factory method.
      */
     injectConfig?: boolean | string;
+    isFactory?: boolean;
 };
 export declare type ServiceMeta = BaseServiceMeta & {
     id: string;
@@ -49,6 +50,7 @@ export declare type ServiceRecord = {
     priority: number;
     interfaces: string[];
     clazz: any;
+    isFactory?: boolean;
     injectConfig?: string;
     status: ServiceState;
     factory: string;
@@ -94,6 +96,8 @@ export declare class DecoratedServiceRecord implements ServiceRecord {
     gid: string;
     priority: number;
     clazz: any;
+    isDisabled?: boolean;
+    isFactory?: boolean;
     injectConfig?: string;
     interfaces: string[];
     status: ServiceState;
@@ -101,7 +105,7 @@ export declare class DecoratedServiceRecord implements ServiceRecord {
     injectableFactory: InjectableList;
     activator: string;
     deactivator: string;
-    dependencies: Record<string, DependencyMeta['matchCriteria']>;
+    dependencies: Record<string, DependencyMeta["matchCriteria"]>;
     injectableMethods: Record<string, InjectableList>;
     constructor(classMeta: ClassServiceMetadata);
     private processMethods;
@@ -128,4 +132,9 @@ export interface Container {
      * Advertise a service record to container for [immediate] startup.
      */
     register(metadata: DecoratedServiceRecord): any;
+}
+/**
+ * A partial container interface implemented by @ServiceFactory instances.
+ */
+export interface FactoryContainer extends Pick<Container, "has" | "resolve"> {
 }

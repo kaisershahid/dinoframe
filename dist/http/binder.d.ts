@@ -1,7 +1,7 @@
 /// <reference types="qs" />
-import { ErrorRequestHandler, Request, RequestHandler, Response } from 'express';
-import { DecoratedClass, DecoratedMethod } from '../decorator';
-import { ControllerConfig, HandlerConfig, InjectedRequestParam, RequestParamConfig } from './types';
+import { ErrorRequestHandler, Request, RequestHandler, Response } from "express";
+import { DecoratedClass, DecoratedMethod } from "../decorator";
+import { ControllerConfig, HandlerConfig, InjectedRequestParam, RequestParamConfig } from "./types";
 import { ServiceContainer } from "../service-container";
 export declare const SVC_HTTP_DEFAULT = "http.server";
 export declare type AllowedHandler = RequestHandler | ErrorRequestHandler;

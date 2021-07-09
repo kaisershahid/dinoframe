@@ -23,7 +23,7 @@ const decorators_1 = require("../service-container/decorators");
 const express_1 = __importDefault(require("express"));
 const http = __importStar(require("http"));
 const decorator_1 = require("../decorator");
-exports.PROVIDER_ID = 'dinoframe.http';
+exports.PROVIDER_ID = "dinoframe.http";
 exports.HttpBundle = decorator_1.BundleDecoratorFactory(exports.PROVIDER_ID);
 /**
  * Designated bundle entrypoint
@@ -42,7 +42,7 @@ __decorate([
 ], ExpressApp, "getInstance", null);
 ExpressApp = __decorate([
     exports.HttpBundle,
-    decorators_1.Service('express.app')
+    decorators_1.Service("express.app")
 ], ExpressApp);
 exports.ExpressApp = ExpressApp;
 let HttpServer = class HttpServer {
@@ -52,11 +52,11 @@ let HttpServer = class HttpServer {
 };
 __decorate([
     decorators_1.Factory,
-    __param(0, decorators_1.Inject({ id: 'express.app' }))
+    __param(0, decorators_1.Inject({ id: "express.app" }))
 ], HttpServer, "getInstance", null);
 HttpServer = __decorate([
     exports.HttpBundle,
-    decorators_1.Service('http.server')
+    decorators_1.Service("http.server")
 ], HttpServer);
 exports.HttpServer = HttpServer;
 //# sourceMappingURL=index.js.map

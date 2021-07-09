@@ -37,7 +37,7 @@ var MethodType;
     MethodType[MethodType["injectable"] = 4] = "injectable";
 })(MethodType = exports.MethodType || (exports.MethodType = {}));
 exports.getServiceMetadataBuilder = () => {
-    return new decorator_1.DecoratedClassBuilder('service-container');
+    return new decorator_1.DecoratedClassBuilder("service-container");
 };
 /**
  * Normalizes DecoratedClass metadata.
@@ -45,20 +45,25 @@ exports.getServiceMetadataBuilder = () => {
 class DecoratedServiceRecord {
     constructor(classMeta) {
         var _a, _b;
-        this.id = '';
-        this.gid = '';
+        this.id = "";
+        this.gid = "";
         this.priority = 0;
         this.interfaces = [];
         this.status = ServiceState.registered;
-        this.factory = '';
+        this.factory = "";
         this.injectableFactory = [];
-        this.activator = '';
-        this.deactivator = '';
+        this.activator = "";
+        this.deactivator = "";
         this.dependencies = {};
         this.injectableMethods = {};
+        if (classMeta.metadata.length != 1) {
+            throw new Error(`expected exactly 1 decoration, got: ${classMeta.metadata.length}`);
+        }
         this.provider = classMeta._provider;
         this.id = classMeta.metadata[0].id;
         this.gid = classMeta.metadata[0].gid;
+        this.isDisabled = classMeta.metadata[0].disabled;
+        this.isFactory = classMeta.metadata[0].isFactory;
         const ic = classMeta.metadata[0].injectConfig;
         if (ic) {
             this.injectConfig = ic === true ? `config/${this.id}` : ic;
@@ -82,7 +87,8 @@ class DecoratedServiceRecord {
                         this.dependencies[params[0].id] = {};
                     }
                     if (params[0].matchInterface) {
-                        this.dependencies['#' + params[0].matchInterface] = (_a = params[0].matchCriteria) !== null && _a !== void 0 ? _a : { min: 1 };
+                        this.dependencies["#" + params[0].matchInterface] = (_a = params[0]
+                            .matchCriteria) !== null && _a !== void 0 ? _a : { min: 1 };
                     }
                     return params[0];
                 }

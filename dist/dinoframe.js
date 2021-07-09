@@ -23,17 +23,26 @@ class Dinoframe {
     getHttpServer() {
         return this._serviceContainer.resolve(Dinoframe.ID_HTTP_SERVER);
     }
+    getMetadataForBundles() {
+        return decorator_1.flattenManyBundlesMetadata(this.bundleIds);
+    }
     async startup() {
         // 1. get only the records for the given bundles
-        const meta = decorator_1.flattenManyBundlesMetadata(this.bundleIds);
+        const meta = this.getMetadataForBundles();
         // 2. extract service-container records from subset of bundle meta
-        const services = decorator_1.filterMetadataByProvider(meta, require('./service-container').PROVIDER_ID);
-        services.forEach(meta => {
+        const services = decorator_1.filterMetadataByProvider(meta, require("./service-container").PROVIDER_ID);
+        services.forEach((meta) => {
             this._serviceContainer.register(new types_1.DecoratedServiceRecord(meta));
         });
-        await this._serviceContainer.startup();
+        try {
+            await this._serviceContainer.startup();
+        }
+        catch (e) {
+            console.error(e);
+            throw e;
+        }
         // 3. now register http stuff after services load
-        const controllers = decorator_1.filterMetadataByProvider(meta, require('./http').PROVIDER_ID);
+        const controllers = decorator_1.filterMetadataByProvider(meta, require("./http").PROVIDER_ID);
         this.processHttpDecorators(controllers);
     }
     processHttpDecorators(controllers) {
@@ -44,17 +53,17 @@ class Dinoframe {
         const httpApp = this.getExpressApp();
         this._httpBinder.setControllers(controllers).bind((handler, rec, ctrl) => {
             const { path, methods, type } = rec;
-            const mth = methods ? methods.map(m => m.toLowerCase()) : ['get'];
+            const mth = methods ? methods.map((m) => m.toLowerCase()) : ["get"];
             const cname = `gid=${ctrl.gid} ${ctrl.clazz.name}`;
             switch (type) {
                 case types_2.HandlerConfigType.route:
                     let p = path;
-                    if (mth[0] == '*') {
+                    if (mth[0] == "*") {
                         console.log(`express.app.route: (${rec.priority} - ${cname}.${rec.name}) ${mth[0]} ${path}`);
                         httpApp.all(p, handler);
                     }
                     else {
-                        mth.forEach(m => {
+                        mth.forEach((m) => {
                             console.log(`express.app.route: (${rec.priority} - ${cname}.${rec.name}) ${m} ${path}`);
                             httpApp[m](p, handler);
                         });
@@ -79,6 +88,6 @@ class Dinoframe {
     }
 }
 exports.Dinoframe = Dinoframe;
-Dinoframe.ID_EXPRESS_APP = 'express.app';
-Dinoframe.ID_HTTP_SERVER = 'http.server';
+Dinoframe.ID_EXPRESS_APP = "express.app";
+Dinoframe.ID_HTTP_SERVER = "http.server";
 //# sourceMappingURL=dinoframe.js.map

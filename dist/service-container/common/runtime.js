@@ -13,7 +13,7 @@ const decorator_1 = require("../../decorator");
 const decorators_1 = require("../decorators");
 const types_1 = require("../types");
 /** The default runtime bundle id. */
-exports.ID_RUNTIME = 'runtime';
+exports.ID_RUNTIME = "runtime";
 /** Default runtime bundle. */
 const RuntimeBundle = decorator_1.BundleDecoratorFactory(exports.ID_RUNTIME);
 /**
@@ -42,7 +42,7 @@ class StandardConfig {
 }
 exports.StandardConfig = StandardConfig;
 /** Interface of the defacto RuntimeEnv instance. */
-exports.INTERFACE_ENV = 'runtime.env';
+exports.INTERFACE_ENV = "runtime.env";
 /**
  * Exposes **process.env** as a `Config`. Nothing fancy.
  *
@@ -61,7 +61,7 @@ DefaultRuntimeEnv = __decorate([
     RuntimeBundle,
     decorators_1.Service(`${exports.ID_RUNTIME}.environment`, {
         interfaces: [exports.INTERFACE_ENV],
-        priority: types_1.ContainerPhases.bootstrap
+        priority: types_1.ContainerPhases.bootstrap,
     })
 ], DefaultRuntimeEnv);
 exports.DefaultRuntimeEnv = DefaultRuntimeEnv;
