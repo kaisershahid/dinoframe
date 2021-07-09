@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const decorators_1 = require("./decorators");
 const types_1 = require("./types");
-exports.SVC_HTTP_DEFAULT = 'http.server';
+exports.SVC_HTTP_DEFAULT = "http.server";
 /**
  * Attempts to extract each arg's corresponding request parameter value. If
  * transformer is defined, apply to value. First 3 args are ignored since
@@ -122,13 +122,15 @@ class HttpDecoratorsBinder {
         // create scoped functions class-first and push to list
         for (const ctrl of this.controllers) {
             const { gid, clazz } = ctrl;
-            const inst = this.container.hasGid(gid) ? this.container.resolveGid(gid) : new clazz();
+            const inst = this.container.hasGid(gid)
+                ? this.container.resolveGid(gid)
+                : new clazz();
             let { path: pathPrefix, methods: defaultMethods, headers: defaultHeaders, } = ctrl.metadata[0];
             if (!pathPrefix) {
-                pathPrefix = '';
+                pathPrefix = "";
             }
             if (!defaultMethods) {
-                defaultMethods = ['GET'];
+                defaultMethods = ["GET"];
             }
             if (!defaultHeaders) {
                 defaultHeaders = {};
@@ -141,7 +143,12 @@ class HttpDecoratorsBinder {
                     if (!headers) {
                         headers = { ...defaultHeaders };
                     }
-                    path = type === types_1.HandlerConfigType.error ? undefined : path ? `${pathPrefix}${path}` : undefined;
+                    path =
+                        type === types_1.HandlerConfigType.error
+                            ? undefined
+                            : path
+                                ? `${pathPrefix}${path}`
+                                : undefined;
                     priority = priority !== null && priority !== void 0 ? priority : 0;
                     const bound = type === types_1.HandlerConfigType.error
                         ? exports.makeErrorHandlerProxyToController(inst, methodName, methodDecorators)
@@ -149,7 +156,7 @@ class HttpDecoratorsBinder {
                     boundList.push([
                         bound,
                         { ...meta, path, headers, methods, priority },
-                        ctrl
+                        ctrl,
                     ]);
                 }
             }

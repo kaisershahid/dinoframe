@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { DecoratedParameter } from '../decorator';
+import { Request, Response } from "express";
+import { DecoratedParameter } from "../decorator";
 export declare type HeaderRecord = {
     name?: string;
     values?: string[];
@@ -57,7 +57,7 @@ export declare class RequestParamError extends Error {
 }
 export declare type ParameterRecord = {
     name?: string;
-    type?: 'string' | 'number';
+    type?: "string" | "number";
     enumValues?: string[];
     description?: string;
     required?: boolean;

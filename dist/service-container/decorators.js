@@ -3,30 +3,34 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const types_1 = require("./types");
 const registry_1 = require("../decorator/registry");
 const builder = types_1.getServiceMetadataBuilder();
+/**
+ * Class -- marks the class as a singleton service. If `isFactory` is true, service is treated as
+ * a sub-service factory. Don't confuse with `@Factory`.
+ */
 exports.Service = (id, meta = {}) => {
     return (clazz) => {
-        builder.pushClass(clazz, { id, gid: registry_1.getOrMakeGidForConstructor(clazz), ...meta }, 'Service');
+        builder.pushClass(clazz, { id, gid: registry_1.getOrMakeGidForConstructor(clazz), ...meta }, "Service");
     };
 };
 /**
- * Method -- if defined, expected to return service instance. Necessary to mark
- * if you need to inject dependencies via constructor.
+ * Method (static) -- if defined, expected to return service instance. Necessary if you prefer to use
+ * constructor injection.
  */
 exports.Factory = (target, name, desc) => {
-    builder.pushMethod(target, name, { type: types_1.MethodType.factory, name }, 'Factory');
+    builder.pushMethod(target, name, { type: types_1.MethodType.factory, name }, "Factory");
 };
 /**
  * Method -- if defined, invoked before service is marked as active. error blocks
  * dependents.
  */
 exports.Activate = (target, name, desc) => {
-    builder.pushMethod(target, name, { type: types_1.MethodType.activate, name }, 'Activate');
+    builder.pushMethod(target, name, { type: types_1.MethodType.activate, name }, "Activate");
 };
 /**
  * Method -- invoked on shutdown. error is logged as error; does not block dependents.
  */
 exports.Deactivate = (target, name, desc) => {
-    builder.pushMethod(target, name, { type: types_1.MethodType.deactivate, name }, 'Deactivate');
+    builder.pushMethod(target, name, { type: types_1.MethodType.deactivate, name }, "Deactivate");
 };
 /**
  * Class -- defines a dependency as service id or 1+ interfaces to match.
@@ -41,14 +45,8 @@ exports.Dependency = (params) => {
  */
 exports.Inject = (params) => {
     return (target, name, pos) => {
-        builder.pushParameter(target, name, pos, { ...params }, 'Inject');
+        builder.pushParameter(target, name, pos, { ...params }, "Inject");
     };
-};
-/**
- * Class -- marks a service as a factory for creating scoped instances.
- * @todo
- */
-exports.ServiceFactory = (id) => {
 };
 /**
  * Returns ALL processed @Service as DecoratedServiceRecord instances

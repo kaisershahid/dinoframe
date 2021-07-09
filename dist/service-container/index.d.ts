@@ -1,4 +1,4 @@
-import { DecoratedServiceRecord, DependencyMeta, InjectableList, Container, ServiceRecord, ServiceState } from "./types";
+import { DecoratedServiceRecord, DependencyMeta, InjectableList, Container, ServiceRecord, ServiceState, FactoryContainer } from "./types";
 export declare const PROVIDER_ID = "service-container";
 /**
  * Keeps track of an individual service's dependencies. Await `ServiceTracker.promise` to
@@ -9,10 +9,10 @@ export declare class ServiceTracker {
     depServices: Record<string, any>;
     depInterfaces: Record<string, any>;
     promise: Promise<string>;
-    resolve: (value?: (PromiseLike<any> | any)) => void;
+    resolve: (value?: PromiseLike<any> | any) => void;
     reject: (reason?: any) => void;
     constructor(id: string);
-    isSatisfied(): boolean;
+    isResolved(): boolean;
 }
 export declare const canActivateService: (status: ServiceState) => boolean;
 export declare const canDeactivateService: (status: ServiceState) => boolean;
@@ -39,19 +39,24 @@ export declare class DependencyTracker {
     bindToInterface(interfaze: string, dependentId: string, depMeta: DependencyMeta): void;
     bindToService(dependencyId: string, dependentId: string): void;
 }
+export declare class ServiceFactoryHelper implements FactoryContainer {
+    private container;
+    constructor(container: ServiceContainer);
+    has(id: string): boolean;
+    resolve<T>(id: string): T;
+    private assertIsFactory;
+}
 export declare class ServiceContainer implements Container {
-    records: Record<string, ServiceRecord>;
+    private records;
     private instances;
-    recordsById: Record<string, number>;
-    recordsByGid: Record<string, string>;
+    private recordsById;
+    private recordsByGid;
     private interfaceToRec;
     private started;
     private depTracker;
+    private factoryHelper;
+    private logger;
     constructor(initialRecords?: DecoratedServiceRecord[]);
-    /**
-     * For bootstrapping purposes, you can directly add an instance to the container.
-     * @return True if id doesn't exist, false otherwise
-     */
     has(id: string): boolean;
     hasGid(gid: string): boolean;
     resolve<T extends any = any>(id: string): T;
@@ -71,4 +76,13 @@ export declare class ServiceContainer implements Container {
     getDependenciesAsArgs(injectable: InjectableList): any[];
     protected activateService(rec: ServiceRecord, inst: any): Promise<any>;
     protected deactivateService(rec: ServiceRecord, inst: any): Promise<any>;
+    isFactory(factoryId: string): boolean;
+    /**
+     * Does static analysis on current service records to determine what dependencies are missing
+     */
+    static analyzeDependencies(records: DecoratedServiceRecord[]): {
+        id: string;
+        status: string;
+        unresolvedDeps: string[];
+    }[];
 }

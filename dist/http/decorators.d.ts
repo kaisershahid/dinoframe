@@ -1,4 +1,4 @@
-import { ControllerConfig, RequestParamConfig, InjectedRequestParam, RouteConfig, HandlerConfig } from './types';
+import { ControllerConfig, RequestParamConfig, InjectedRequestParam, RouteConfig, HandlerConfig } from "./types";
 export declare const Controller: (params?: ControllerConfig) => (target: any) => void;
 export declare const isParameterEmpty: (v: any) => boolean;
 export declare const Route: (params: RouteConfig) => (proto: any, name: string, desc: PropertyDescriptor) => void;

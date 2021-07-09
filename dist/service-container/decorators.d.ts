@@ -1,8 +1,12 @@
 import { BaseServiceMeta, DecoratedServiceRecord, DependencyMeta } from "./types";
+/**
+ * Class -- marks the class as a singleton service. If `isFactory` is true, service is treated as
+ * a sub-service factory. Don't confuse with `@Factory`.
+ */
 export declare const Service: (id: string, meta?: BaseServiceMeta) => (clazz: any) => void;
 /**
- * Method -- if defined, expected to return service instance. Necessary to mark
- * if you need to inject dependencies via constructor.
+ * Method (static) -- if defined, expected to return service instance. Necessary if you prefer to use
+ * constructor injection.
  */
 export declare const Factory: (target: any, name: string, desc: PropertyDescriptor) => void;
 /**
@@ -22,11 +26,6 @@ export declare const Dependency: (params: DependencyMeta) => (target: any) => vo
  * Parameter (extends behavior of @Dependency) --  injects dependency into argument
  */
 export declare const Inject: (params: DependencyMeta) => (target: any, name: string, pos: number) => void;
-/**
- * Class -- marks a service as a factory for creating scoped instances.
- * @todo
- */
-export declare const ServiceFactory: (id: any) => void;
 /**
  * Returns ALL processed @Service as DecoratedServiceRecord instances
  */

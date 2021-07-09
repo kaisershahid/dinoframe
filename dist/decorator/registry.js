@@ -14,11 +14,11 @@ const prototypeRegistry = {};
 const prototypeOrder = [];
 const constructorRegistry = {};
 let gcounter = 1;
-let lastGid = '';
+let lastGid = "";
 let lastTarget;
 let lastTargetWasClass = false;
 exports.findGidForConstructor = (t) => {
-    const isClass = typeof t == 'function';
+    const isClass = typeof t == "function";
     let o = t;
     if (isClass) {
         o = t.prototype;
@@ -28,7 +28,7 @@ exports.findGidForConstructor = (t) => {
             return `${i + 1}`;
         }
     }
-    return '';
+    return "";
 };
 /**
  * Lifecycle:
@@ -39,7 +39,7 @@ exports.findGidForConstructor = (t) => {
  *   - wasLastClass() is true
  */
 exports.getOrMakeGidForConstructor = (t) => {
-    const isClass = typeof t == 'function';
+    const isClass = typeof t == "function";
     let o = t;
     if (isClass) {
         o = t.prototype;
@@ -81,7 +81,7 @@ exports.swapConstructorWithSubclass = (subclass) => {
         prototypeRegistry[lastGid] = subclass;
     }
 };
-exports.hasGidAccessor = (o) => typeof (o === null || o === void 0 ? void 0 : o.getDecoratorGid) === 'function';
+exports.hasGidAccessor = (o) => typeof (o === null || o === void 0 ? void 0 : o.getDecoratorGid) === "function";
 /**
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
  * returned, otherwise, the class will be

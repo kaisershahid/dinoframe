@@ -19,7 +19,7 @@ var RecordType;
 exports.getEmptyDecoratedClass = (gid, provider) => {
     return {
         _type: 0,
-        _decorator: '@DecoratedClass',
+        _decorator: "@DecoratedClass",
         _provider: provider,
         gid,
         clazz: undefined,
@@ -30,14 +30,14 @@ exports.getEmptyDecoratedClass = (gid, provider) => {
         staticProperties: {},
     };
 };
-exports.hasBundleId = (o) => typeof (o === null || o === void 0 ? void 0 : o.getBundleId) === 'function';
+exports.hasBundleId = (o) => typeof (o === null || o === void 0 ? void 0 : o.getBundleId) === "function";
 /**
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
  * returned, otherwise, the class will be
  */
 exports.getBundleId = (o) => exports.hasBundleId(o) ? o.getBundleId() : undefined;
 let decClassInstances = [];
-let lastBundleId = '';
+let lastBundleId = "";
 /**
  * Returns a decorator that marks class as belonging to bundle identified by id. This allows you to
  * easily group and identify related classes in a module.
@@ -89,13 +89,15 @@ exports.getBundledMetadata = (id) => {
     return { id, metadata: [...bundleRegistry[id]] };
 };
 exports.getManyBundlesMetadata = (ids) => {
-    return ids.map(id => exports.getBundledMetadata(id));
+    return ids.map((id) => exports.getBundledMetadata(id));
 };
 /**
  * Most common use case -- get the metadata of all bundles as a single list.
  */
 exports.flattenManyBundlesMetadata = (ids) => {
-    return exports.getManyBundlesMetadata(ids).map(m => m.metadata).reduce((a, b) => a.concat(b), []);
+    return exports.getManyBundlesMetadata(ids)
+        .map((m) => m.metadata)
+        .reduce((a, b) => a.concat(b), []);
 };
 /**
  * Given an input list of metadata, only return the ones for specified provider. E.g.
@@ -103,10 +105,10 @@ exports.flattenManyBundlesMetadata = (ids) => {
  * returns `[{_provider:'http'}]`
  */
 exports.filterMetadataByProvider = (metadata, provider) => {
-    return metadata.filter(m => m.provider == provider || m._provider == provider);
+    return metadata.filter((m) => m.provider == provider || m._provider == provider);
 };
 exports.filterByDecorator = (metadata, decorator) => {
-    return metadata.filter(m => m.decorator == decorator || m._decorator == decorator);
+    return metadata.filter((m) => m.decorator == decorator || m._decorator == decorator);
 };
 /**
  * Iteratively construct a class tree of decorators for easy in-process and post-
@@ -119,8 +121,8 @@ exports.filterByDecorator = (metadata, decorator) => {
  */
 class DecoratedClassBuilder {
     constructor(provider) {
-        this.curGid = '';
-        this.cur = exports.getEmptyDecoratedClass('', '');
+        this.curGid = "";
+        this.cur = exports.getEmptyDecoratedClass("", "");
         this.finalized = [];
         this.provider = provider;
         decClassInstances.push(this);
@@ -147,10 +149,10 @@ class DecoratedClassBuilder {
             ...metadata,
             _type: RecordType.property,
             _provider: this.provider,
-            _decorator: decorator
+            _decorator: decorator,
         });
     }
-    pushProperty(proto, name, metadata, decorator = '') {
+    pushProperty(proto, name, metadata, decorator = "") {
         const isStatic = !!proto.prototype;
         this.checkProto(proto);
         this.initProperty(name, isStatic, metadata, decorator);
@@ -164,7 +166,7 @@ class DecoratedClassBuilder {
             };
         }
     }
-    pushMethod(proto, name, metadata, decorator = '') {
+    pushMethod(proto, name, metadata, decorator = "") {
         const isStatic = !!proto.prototype;
         this.checkProto(proto);
         this.initMethod(name, isStatic);
@@ -172,7 +174,7 @@ class DecoratedClassBuilder {
             ...metadata,
             _type: RecordType.method,
             _provider: this.provider,
-            _decorator: decorator
+            _decorator: decorator,
         };
         if (isStatic) {
             this.cur.staticMethods[name].metadata.push(meta);
@@ -188,7 +190,7 @@ class DecoratedClassBuilder {
             target[methodName].parameters[pos] = [];
         }
     }
-    pushParameter(proto, methodName, pos, metadata, decorator = '') {
+    pushParameter(proto, methodName, pos, metadata, decorator = "") {
         const isStatic = !!proto.prototype;
         this.checkProto(proto);
         this.initParameter(methodName, pos, isStatic);
@@ -197,17 +199,17 @@ class DecoratedClassBuilder {
             ...metadata,
             _type: RecordType.parameter,
             _provider: this.provider,
-            _decorator: decorator
+            _decorator: decorator,
         });
     }
-    pushClass(clazz, metadata, decorator = '') {
+    pushClass(clazz, metadata, decorator = "") {
         this.checkProto(clazz);
         this.cur.clazz = clazz;
         this.cur.metadata.push({
             ...metadata,
             _type: RecordType.clazz,
             _provider: this.provider,
-            _decorator: decorator
+            _decorator: decorator,
         });
     }
     getFinalized() {

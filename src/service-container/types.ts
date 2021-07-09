@@ -123,6 +123,7 @@ export class DecoratedServiceRecord implements ServiceRecord {
   gid: string = "";
   priority = 0;
   clazz: any;
+  isDisabled?: boolean;
   isFactory?: boolean;
   injectConfig?: string;
   interfaces: string[] = [];
@@ -144,7 +145,8 @@ export class DecoratedServiceRecord implements ServiceRecord {
     this.provider = classMeta._provider;
     this.id = classMeta.metadata[0].id;
     this.gid = classMeta.metadata[0].gid;
-    this.isFactory = classMeta.metadata[0]._decorator == "ServiceFactory";
+    this.isDisabled = classMeta.metadata[0].disabled;
+    this.isFactory = classMeta.metadata[0].isFactory;
     const ic = classMeta.metadata[0].injectConfig;
     if (ic) {
       this.injectConfig = ic === true ? `config/${this.id}` : ic;
