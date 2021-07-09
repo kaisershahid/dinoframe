@@ -1,6 +1,6 @@
 {
 	"name": "dinoframe",
-	"version": "0.1.20210701",
+	"version": "0.1.20210709",
 	"scripts": {
 		"test": "jest",
 		"prepack": "npx webpack",
