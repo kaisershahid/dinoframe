@@ -1,19 +1,26 @@
-import { ServiceContainer } from "./service-container";
-import { HttpDecoratorsBinder } from "./http/binder";
+import {ServiceContainer} from "./service-container";
+import {HttpDecoratorsBinder} from "./http/binder";
 import {
   DecoratedClass,
   filterMetadataByProvider,
-  flattenManyBundlesMetadata,
+  flattenManyBundlesMetadata, getBundledMetadata,
 } from "./decorator";
-import { DecoratedServiceRecord } from "./service-container/types";
-import { HandlerConfigType } from "./http/types";
+import {HandlerConfigType} from "./http/types";
 import express from "express";
 import * as http from "http";
+import {BundleActivator, BundleConfig} from "./service-container/bundle";
+import {
+  DecoratedServiceRecord,
+  getAllServicesByGidMap,
+  getAllServicesForBundle,
+  getAllServicesMap
+} from "./service-container/utils";
 
 export class Dinoframe {
   static readonly ID_EXPRESS_APP = "express.app";
   static readonly ID_HTTP_SERVER = "http.server";
   private bundleIds: string[];
+  private bundleConfigs: Record<string, BundleConfig> = {};
   private _serviceContainer: ServiceContainer;
   private _httpBinder: HttpDecoratorsBinder;
 
@@ -29,6 +36,11 @@ export class Dinoframe {
 
   get httpBinder(): HttpDecoratorsBinder {
     return this._httpBinder;
+  }
+
+  addBundleConfig(id: string, config: BundleConfig): this {
+    this.bundleConfigs[id] = config;
+    return this;
   }
 
   getExpressApp() {
@@ -47,16 +59,42 @@ export class Dinoframe {
     return flattenManyBundlesMetadata(this.bundleIds);
   }
 
+  activateBundles() {
+    const visited: any = {};
+    let metaRecords: DecoratedServiceRecord[] = [];
+
+    for (const bundleId of this.bundleIds) {
+      if (visited[bundleId]) {
+        continue;
+      }
+
+      const bundleRecs = getAllServicesForBundle(bundleId);
+      if (this.bundleConfigs[bundleId]) {
+        const activator = new BundleActivator(bundleId, this.bundleConfigs[bundleId]);
+        const bundleDeps = activator.loadDependencies();
+        for (const depId of bundleDeps) {
+          this.bundleIds.push(depId);
+        }
+
+        metaRecords = metaRecords.concat(activator.processServiceRecords(bundleRecs, getAllServicesMap()));
+      } else {
+        metaRecords = metaRecords.concat(bundleRecs)
+      }
+    }
+
+    return metaRecords;
+  }
+
   async startup() {
     // 1. get only the records for the given bundles
-    const meta = this.getMetadataForBundles();
+    const meta = this.activateBundles();
     // 2. extract service-container records from subset of bundle meta
     const services = filterMetadataByProvider(
       meta,
       require("./service-container").PROVIDER_ID
     );
-    services.forEach((meta) => {
-      this._serviceContainer.register(new DecoratedServiceRecord(meta));
+    services.forEach((svc) => {
+      this._serviceContainer.register(svc);
     });
 
     try {
@@ -84,7 +122,7 @@ export class Dinoframe {
 
     const httpApp = this.getExpressApp();
     this._httpBinder.setControllers(controllers).bind((handler, rec, ctrl) => {
-      const { path, methods, type } = rec;
+      const {path, methods, type} = rec;
       const mth = methods ? methods.map((m) => m.toLowerCase()) : ["get"];
       const cname = `gid=${ctrl.gid} ${ctrl.clazz.name}`;
       switch (type) {

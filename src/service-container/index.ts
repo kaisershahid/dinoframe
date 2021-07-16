@@ -1,5 +1,4 @@
 import {
-  DecoratedServiceRecord,
   DependencyMeta,
   InjectableList,
   Container,
@@ -8,6 +7,7 @@ import {
   FactoryContainer,
 } from "./types";
 import {Logger, LoggerFactory, LoggerLevel} from "./common/logging";
+import {DecoratedServiceRecord} from "./utils";
 
 export const PROVIDER_ID = "service-container";
 
@@ -311,7 +311,7 @@ export class ServiceContainer implements Container {
 
     const promises: Promise<any>[] = [];
     for (const rec of recs) {
-      if (rec.disabled || !canActivateService(rec.status)) {
+      if (rec.isDisabled || !canActivateService(rec.status)) {
         continue;
       }
       promises.push(
@@ -406,7 +406,7 @@ export class ServiceContainer implements Container {
 
     const promises: Promise<any>[] = [];
     for (const rec of Object.values(this.records)) {
-      if (rec.disabled || canDeactivateService(rec.status)) {
+      if (rec.isDisabled || canDeactivateService(rec.status)) {
         continue;
       }
       promises.push(

@@ -59,3 +59,14 @@ export class TrivialConfig {
     return new StandardConfig({ name: "trivial from config" });
   }
 }
+
+@ServiceBundle
+@Service('duplicate')
+export class DuplicateService {
+  private config: Record<string, any>;
+
+  constructor(config?: Record<string, any>) {
+    this.config = config ?? {name: 'duplicate.default'};
+    console.log('duplicate service:', this.config);
+  }
+}
