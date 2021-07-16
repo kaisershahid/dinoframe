@@ -48,7 +48,7 @@ dino.addBundleConfig("example-app.services", {
 })
 
 if (process.argv[2] == '--debug') {
-  const status = ServiceContainer.analyzeDependencies(dino.getMetadataForBundles().map(c => new DecoratedServiceRecord(c)));
+  const status = ServiceContainer.analyzeDependencies(dino.activateBundles());
   for (const rec of status) {
     if (rec.status == 'RESOLVED') {
       console.log(`✅ ${rec.status} ${rec.id}`);

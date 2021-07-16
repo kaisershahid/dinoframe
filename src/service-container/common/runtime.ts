@@ -4,7 +4,7 @@
 
 import { BundleDecoratorFactory } from "../../decorator";
 import { Factory, Service } from "../decorators";
-import { ContainerPhases } from "../types";
+import {ContainerPhases, FactoryContainer} from "../types";
 
 /** The default runtime bundle id. */
 export const ID_RUNTIME = "runtime";
@@ -75,3 +75,35 @@ export class DefaultRuntimeEnv {
 export const discover = () => {
   return ID_RUNTIME;
 };
+
+@RuntimeBundle
+@Service(`${ID_RUNTIME}.configProvider`, {
+  isFactory: true,
+  priority: ContainerPhases.config
+})
+export class RuntimeConfigProvider implements FactoryContainer {
+  private static singleton: RuntimeConfigProvider = new RuntimeConfigProvider();
+
+  configs: Record<string, any> = {};
+
+  @Factory
+  static getSingleton() {
+    return this.singleton;
+  }
+
+  has(id: string): boolean {
+    return this.configs[id] !== undefined;
+  }
+
+  resolve<T>(id: string): T {
+    if (!this.configs[id]) {
+      throw new Error(`could not find config: ${id}`);
+    }
+
+    return this.configs[id];
+  }
+
+  addConfig(id: string, config: Record<string, any>) {
+    this.configs[id] = config;
+  }
+}

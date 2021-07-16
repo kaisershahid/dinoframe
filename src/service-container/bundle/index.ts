@@ -1,6 +1,7 @@
 import {BaseServiceMeta, ServiceMeta} from "../types";
 import {DecoratedClass, getBundledMetadata} from "../../decorator";
 import {DecoratedServiceRecord} from "../utils";
+import {ID_RUNTIME, RuntimeConfigProvider, StandardConfig} from "../common/runtime";
 
 export type BundleConfigService = {
   id: string;
@@ -60,10 +61,19 @@ export class BundleActivator {
       recsById[rec.id] = rec;
       const conf = configMap[rec.id];
       if (conf) {
+        const overrides = conf.meta ?? {};
+        let config = conf.config;
+        let injectConfig: undefined | string;
+        if (config) {
+          injectConfig = `${rec.id}@${ID_RUNTIME}.configProvider`;
+        }
+
+        overrides.injectConfig = injectConfig;
+
         recsById[rec.id] = rec.clone({
           id: rec.id,
           gid: rec.gid,
-          ...(conf.meta ?? {}),
+          ...overrides,
           config: conf.config,
           disabled: conf.disabled
         });
@@ -78,13 +88,22 @@ export class BundleActivator {
 
       const conf = configMap[svcId];
       if (conf) {
+        const overrides = conf.meta ?? {};
+        let config = conf.config;
+        let injectConfig: undefined | string;
+        if (config) {
+          injectConfig = `${svcId}@${ID_RUNTIME}.configProvider`;
+        }
+
+        overrides.injectConfig = injectConfig;
+
         // @todo duplicate all decorators for gid -> newGid
         // @todo clone with clazz, and pass to cloneAndRegisterNewService()
         recsById[svcId] = recsById[conf.id].cloneAndRegisterNewService(svcId, {
           id: svcId,
           gid: '',
-          ...(conf.meta ?? {}),
-          config: conf.config,
+          ...overrides,
+          config,
           disabled: conf.disabled
         });
       }

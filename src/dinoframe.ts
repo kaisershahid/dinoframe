@@ -15,6 +15,13 @@ import {
   getAllServicesForBundle,
   getAllServicesMap
 } from "./service-container/utils";
+import {
+  ID_RUNTIME,
+  RuntimeConfigProvider,
+  StandardConfig
+} from "./service-container/common/runtime";
+import {ID_LOGGER} from "./service-container/common/logging";
+import {ClassServiceMetadata} from "./service-container/types";
 
 export class Dinoframe {
   static readonly ID_EXPRESS_APP = "express.app";
@@ -25,7 +32,7 @@ export class Dinoframe {
   private _httpBinder: HttpDecoratorsBinder;
 
   constructor(bundleIds: string[]) {
-    this.bundleIds = bundleIds;
+    this.bundleIds = [ID_RUNTIME, ID_LOGGER].concat(bundleIds);
     this._serviceContainer = new ServiceContainer();
     this._httpBinder = new HttpDecoratorsBinder(this._serviceContainer);
   }
@@ -53,10 +60,6 @@ export class Dinoframe {
     return this._serviceContainer.resolve<http.Server>(
       Dinoframe.ID_HTTP_SERVER
     );
-  }
-
-  getMetadataForBundles() {
-    return flattenManyBundlesMetadata(this.bundleIds);
   }
 
   activateBundles() {
@@ -89,11 +92,17 @@ export class Dinoframe {
     // 1. get only the records for the given bundles
     const meta = this.activateBundles();
     // 2. extract service-container records from subset of bundle meta
-    const services = filterMetadataByProvider(
+    const services: DecoratedServiceRecord[] = filterMetadataByProvider(
       meta,
       require("./service-container").PROVIDER_ID
     );
+
+    const cfgProvider = RuntimeConfigProvider.getSingleton();
     services.forEach((svc) => {
+      if (svc.config) {
+        // binds config to ConfigProvider as `${serviceId}@${ID_RUNTIME}.configProvider`
+        cfgProvider.addConfig(svc.id, new StandardConfig(svc.config))
+      }
       this._serviceContainer.register(svc);
     });
 
