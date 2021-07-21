@@ -1,7 +1,11 @@
 import {BaseServiceMeta, ServiceMeta} from "../types";
 import {DecoratedClass, getBundledMetadata} from "../../decorator";
-import {DecoratedServiceRecord} from "../utils";
-import {ID_RUNTIME, RuntimeConfigProvider, StandardConfig} from "../common/runtime";
+import {DecoratedServiceRecord, makeConfigId} from "../utils";
+import {
+  CONFIG_PROVIDER_SUFFIX,
+  ID_RUNTIME, RuntimeConfigProvider,
+  StandardConfig
+} from "../common/runtime";
 
 export type BundleConfigService = {
   id: string;
@@ -61,11 +65,15 @@ export class BundleActivator {
       recsById[rec.id] = rec;
       const conf = configMap[rec.id];
       if (conf) {
+        // both here and below, because service config values are provided in the bundle config,
+        // we're assuming that's the intended runtime config, so we point injectConfig to the
+        // runtime config provider
         const overrides = conf.meta ?? {};
         let config = conf.config;
         let injectConfig: undefined | string;
         if (config) {
-          injectConfig = `${rec.id}@${ID_RUNTIME}.configProvider`;
+          injectConfig = makeConfigId(rec.id);
+          config = {...(rec.originalMeta.metadata[0].config ?? {}), ...config};
         }
 
         overrides.injectConfig = injectConfig;
@@ -92,7 +100,8 @@ export class BundleActivator {
         let config = conf.config;
         let injectConfig: undefined | string;
         if (config) {
-          injectConfig = `${svcId}@${ID_RUNTIME}.configProvider`;
+          injectConfig = makeConfigId(svcId);
+          config = {...(recsById[conf.id].originalMeta.metadata[0].config ?? {}), ...config};
         }
 
         overrides.injectConfig = injectConfig;

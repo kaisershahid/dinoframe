@@ -4,7 +4,7 @@ import {
   Container,
   ServiceRecord,
   ServiceState,
-  FactoryContainer,
+  FactoryContainer, InterfaceAvailableListener,
 } from "./types";
 import {Logger, LoggerFactory, LoggerLevel} from "./common/logging";
 import {DecoratedServiceRecord} from "./utils";
@@ -179,6 +179,7 @@ export class ServiceFactoryHelper implements FactoryContainer {
   }
 
   has(id: string): boolean {
+    console.log("?> ", id);
     const [subId, factoryId] = id.split("@");
     this.assertIsFactory(factoryId);
     if (!this.container.has(factoryId)) {
@@ -189,6 +190,7 @@ export class ServiceFactoryHelper implements FactoryContainer {
   }
 
   resolve<T>(id: string): T {
+    console.log("?? ", id);
     const [subId, factoryId] = id.split("@");
     this.assertIsFactory(factoryId);
     const svc = this.container
@@ -217,6 +219,7 @@ export class ServiceContainer implements Container {
   private depTracker: DependencyTracker = new DependencyTracker();
   private factoryHelper: ServiceFactoryHelper;
   private logger: Logger;
+  private interfaceSubscribers: Record<string, Record<string, InterfaceAvailableListener>> = {};
 
   constructor(initialRecords: DecoratedServiceRecord[] = []) {
     initialRecords.forEach((r) => this.register(r));
@@ -327,8 +330,10 @@ export class ServiceContainer implements Container {
             })
             .reduce((a, b) => a.concat(b), []);
 
+          this.registerInterfaceSubscriptions(rec.id, inst, rec.subscribeToInterfaces);
           this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
-          // @todo notify subscribers for interfaces
+          console.log('🥁 ', rec.id, rec.interfaces) ;
+          this.notifyInterfacesAvailable(inst, notifyInterfaces);
         }).catch((e) => {
           this.logger.error(e);
         })
@@ -386,6 +391,15 @@ export class ServiceContainer implements Container {
     return st.promise;
   }
 
+  private registerInterfaceSubscriptions(svcId: string, inst: any, interfaces: string[]) {
+    for (const _interface of interfaces) {
+      if (!this.interfaceSubscribers[_interface]) {
+        this.interfaceSubscribers[_interface] = {};
+      }
+      this.interfaceSubscribers[_interface][svcId] = inst;
+    }
+  }
+
   private wakeUpDependents(depIds: string[]) {
     const visited: Record<string, boolean> = {};
     for (const depId of depIds) {
@@ -395,6 +409,23 @@ export class ServiceContainer implements Container {
       if (st.isResolved()) {
         this.logger.info(`. wakeUpDependents: ${depId} RESOLVED`);
         st.resolve(depId);
+      }
+    }
+  }
+
+  private notifyInterfacesAvailable(inst: any, notifyInterfaces: string[]) {
+    for (const _interface of notifyInterfaces) {
+      if (!this.interfaceSubscribers[_interface]) {
+        continue;
+      }
+
+      for (const svcId in this.interfaceSubscribers[_interface]) {
+        console.log('<<<', svcId, _interface);
+        try {
+          this.interfaceSubscribers[_interface][svcId].onAvailableInterface(_interface, [inst])
+        } catch (e) {
+          this.logger.error(`notifyInterfacesAvailable: ${_interface} -> ${svcId}`, e);
+        }
       }
     }
   }

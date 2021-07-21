@@ -1,5 +1,4 @@
 import {
-  BaseServiceMeta,
   ClassServiceMetadata,
   DependencyMeta,
   InjectableList,
@@ -13,11 +12,11 @@ import {
   DecoratedClass,
   DecoratedClassBuilder,
   DecoratedMethod,
-  getGidsForBundle, RecordType
+  getGidsForBundle
 } from "../decorator";
 import {getDecoratedServiceRecords} from "./decorators";
 import cloneDeep from 'lodash.clonedeep';
-import {getOrMakeGidForConstructor, GidAccessible} from "../decorator/registry";
+import {getOrMakeGidForConstructor} from "../decorator/registry";
 
 /**
  * Normalizes DecoratedClass metadata.
@@ -41,13 +40,14 @@ export class DecoratedServiceRecord implements ServiceRecord {
   deactivator = "";
   dependencies: Record<string, DependencyMeta["matchCriteria"]> = {};
   injectableMethods: Record<string, InjectableList> = {};
+  subscribeToInterfaces: string[] = [];
 
   constructor(classMeta: DecoratedClass) {
     this.originalMeta = classMeta;
     this.initFromDecoratedClass(classMeta);
   }
 
-  private initFromDecoratedClass(classMeta: DecoratedClass) {
+  private initFromDecoratedClass(classMeta: DecoratedClass<ServiceMeta>) {
     if (classMeta.metadata.length != 1) {
       throw new Error(
         `expected exactly 1 decoration, got: ${classMeta.metadata.length}`
@@ -63,12 +63,14 @@ export class DecoratedServiceRecord implements ServiceRecord {
 
     const ic = classMeta.metadata[0].injectConfig;
     if (ic) {
-      this.injectConfig = ic === true ? `config/${this.id}` : ic;
+      this.injectConfig = ic === true ? makeConfigId(this.id) : ic;
       this.dependencies[this.injectConfig] = {};
     }
     this.clazz = classMeta.clazz;
     this.priority = classMeta.metadata[0].priority ?? 0;
     this.interfaces = classMeta.metadata[0].interfaces ?? [];
+    this.subscribeToInterfaces = classMeta.metadata[0].subscribeToInterfaces ?? [];
+
     this.processMethods(classMeta.methods);
     this.processMethods(classMeta.staticMethods, true);
   }
@@ -223,6 +225,22 @@ export const cloneServiceRecord = (rec: ServiceRecord): ServiceRecord => {
     activator: rec.activator,
     deactivator: rec.deactivator,
     dependencies: {...rec.dependencies},
-    injectableMethods: {...rec.injectableMethods}
+    injectableMethods: {...rec.injectableMethods},
+    subscribeToInterfaces: [...rec.subscribeToInterfaces]
   }
+}
+
+/**
+ * Generates the full service reference for a config from default provider. Note that the suffixes
+ * are derived from ID_RUNTIME and CONFIG_PROVIDER_SUFFIX in `common/runtime.ts`. For circular dep
+ * avoidance, moving to this file and dropping const refs.
+ */
+export const makeConfigId = (subId: string): string => `${subId}@runtime.configProvider`
+
+/**
+ * Returns the subId or undefined from a service reference of the form `subId@runtime.configProvider`.
+ */
+export const extractConfigSubId = (configId: string) => {
+  const [s1, s2] = configId.split('@runtime.configProvider');
+  return s2 === undefined ? undefined : s1;
 }

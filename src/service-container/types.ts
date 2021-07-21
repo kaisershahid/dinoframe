@@ -39,6 +39,7 @@ export type BaseServiceMeta = {
    */
   config?: Record<string, any>;
   isFactory?: boolean;
+  subscribeToInterfaces?: string[];
 };
 
 export type ServiceMeta = BaseServiceMeta & {
@@ -55,6 +56,10 @@ export enum ServiceState {
 }
 
 export type InjectableList = (DependencyMeta | undefined)[];
+
+export interface InterfaceAvailableListener {
+  onAvailableInterface(_interface: string, services: any[]);
+}
 
 // @todo add inherit:boolean to indicate copying defs from superclass?
 export type ServiceRecord = {
@@ -75,6 +80,7 @@ export type ServiceRecord = {
   deactivator: string;
   dependencies: Record<string, any>;
   injectableMethods: Record<string, InjectableList>;
+  subscribeToInterfaces: string[];
 };
 
 export enum MethodType {
