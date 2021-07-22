@@ -10,6 +10,8 @@ import {
 export type BundleConfigService = {
   id: string;
   runtimeId?: string;
+  /** @todo if present, set runtimeId as `idPrefix + '.' + id` */
+  idPrefix?: string;
   disabled?: boolean;
   meta?: Partial<BaseServiceMeta>;
   config?: Record<string, any>
