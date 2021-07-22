@@ -174,6 +174,8 @@ Services can be logically grouped together by associating it with a bundle. This
 
 > A bundle decorator is returned from `BundleDecoratorFactory`, and service metadata can be retrieved using `getBundleMetadata(bundleId: string)`.
 
+[See bundle/readme.md](./bundle/readme.md) for more in-depth discussion of bundles.
+
 ## A Complete Picture
 
 The following example shows how to define services, associate them with a bundle, and selectively register and start those bundles in the container.

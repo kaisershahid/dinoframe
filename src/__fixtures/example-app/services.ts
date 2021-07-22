@@ -1,7 +1,11 @@
 import { BundleDecoratorFactory } from "../../decorator";
 import {Activate, Factory, Inject, Service} from "../../service-container/decorators";
-import { Config, StandardConfig } from "../../service-container/common/runtime";
-import { FactoryContainer } from "../../service-container/types";
+import {
+  Config,
+  INTERFACE_CONFIG_INSTANCE,
+  StandardConfig, StandardConfigWithId
+} from "../../service-container/common/runtime";
+import {ContainerPhases, FactoryContainer} from "../../service-container/types";
 import {Logger} from "../../service-container/common/logging";
 
 const ServiceBundle = BundleDecoratorFactory("example-app.services");
@@ -43,19 +47,40 @@ export class TrivialService {
 }
 
 @ServiceBundle
-@Service("config/controller.upload")
+@Service("config/controller.upload", {
+  priority: ContainerPhases.config,
+  interfaces: [
+    INTERFACE_CONFIG_INSTANCE
+  ]
+})
 export class ControllerConfig {
   @Factory
   static getConfig() {
-    return new StandardConfig({ controllerConfig: true });
+    return new StandardConfigWithId('controller.upload', { controllerConfig: true });
   }
 }
 
 @ServiceBundle
-@Service("config/trivial")
+@Service("config/trivial", {
+  priority: ContainerPhases.config,
+  interfaces: [
+    INTERFACE_CONFIG_INSTANCE
+  ]
+})
 export class TrivialConfig {
   @Factory
   static getConfig() {
-    return new StandardConfig({ name: "trivial from config" });
+    return new StandardConfigWithId('trivial', { name: "trivial from config" });
+  }
+}
+
+@ServiceBundle
+@Service('duplicate')
+export class DuplicateService {
+  private config: Record<string, any>;
+
+  constructor(config?: Record<string, any>) {
+    this.config = config ?? {name: 'duplicate.default'};
+    console.log('duplicate service:', this.config);
   }
 }

@@ -13,7 +13,7 @@ import { Dinoframe } from "../../dinoframe";
 import { ExpressApp } from "../../http";
 import { UploadController } from "./http-controllers";
 import {ServiceContainer} from "../../service-container";
-import {DecoratedServiceRecord} from "../../service-container/types";
+import {DecoratedServiceRecord} from "../../service-container/utils";
 
 /*
 CONVENTION: each bundle's entrypoint is either:
@@ -35,8 +35,20 @@ const dino = new Dinoframe([
   require("../../service-container/common/logging").discover()
 ]);
 
+dino.addBundleConfig("example-app.services", {
+  services: [
+    {
+      id: 'duplicate',
+      runtimeId: 'newDuplicate',
+      config: {
+        name: 'new deuplicate'
+      }
+    }
+  ]
+})
+
 if (process.argv[2] == '--debug') {
-  const status = ServiceContainer.analyzeDependencies(dino.getMetadataForBundles().map(c => new DecoratedServiceRecord(c)));
+  const status = ServiceContainer.analyzeDependencies(dino.activateBundles());
   for (const rec of status) {
     if (rec.status == 'RESOLVED') {
       console.log(`✅ ${rec.status} ${rec.id}`);

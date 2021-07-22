@@ -1,11 +1,10 @@
 import {
-  BaseServiceMeta,
-  DecoratedServiceRecord,
+  BaseServiceMeta, ClassServiceMetadata,
   DependencyMeta,
-  getServiceMetadataBuilder,
   MethodType,
 } from "./types";
 import { getOrMakeGidForConstructor } from "../decorator/registry";
+import {DecoratedServiceRecord, getServiceMetadataBuilder} from "./utils";
 
 const builder = getServiceMetadataBuilder();
 
@@ -91,11 +90,39 @@ export const Inject = (params: DependencyMeta) => {
   };
 };
 
+let finalServices: ClassServiceMetadata[]|undefined;
+let serviceToMeta: Record<string, ClassServiceMetadata> = {};
+
 /**
  * Returns ALL processed @Service as DecoratedServiceRecord instances
  */
 export const getDecoratedServiceRecords = () => {
-  return builder.getFinalized().map((meta) => {
+  if (!finalServices) {
+    finalServices = builder.getFinalized();
+  }
+
+  return finalServices.map((meta) => {
     return new DecoratedServiceRecord(meta);
   });
 };
+
+/**
+ * Registers new new through a ClassServiceMetadata object. @Service.id must
+ * be unique.
+ */
+export const addNewServiceMeta = (meta: ClassServiceMetadata): boolean => {
+  const id = meta.metadata[0].id;
+  if (serviceToMeta[id]) {
+    return false;
+  }
+
+  if (!finalServices) {
+    finalServices = builder.getFinalized();
+  }
+
+  const metaCopy = {...meta};
+  finalServices.push(metaCopy);
+  serviceToMeta[id] = metaCopy;
+
+  return true;
+}
