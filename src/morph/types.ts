@@ -10,6 +10,7 @@ export class FieldError extends Error {
 
 export class ObjectError extends Error {
   fieldErrors: Record<string, any>;
+
   constructor(targetName: string, errors: Record<string, any>) {
     super(`One or more errors for: ${targetName}`);
     this.fieldErrors = errors;
@@ -17,10 +18,11 @@ export class ObjectError extends Error {
 }
 
 export type ValidatorError = {
-
+  message: string;
+  [key: string]: any;
 };
 
-export type ValidatorFn = (value: any, name: string) => ValidatorError|undefined;
+export type ValidatorFn = (value: any, name: string) => ValidatorError | undefined;
 
 export type PropertyParams = {
   /**
@@ -29,6 +31,11 @@ export type PropertyParams = {
   name: string;
   propertyName?: string;
   validator?: ValidatorFn;
+  /**
+   * Requires key to be present and not empty based on type:
+   */
+  required?: boolean;
+  type?: 'boolean' | 'string' | 'number' | 'enum'
 }
 
 export type MethodParams = {
