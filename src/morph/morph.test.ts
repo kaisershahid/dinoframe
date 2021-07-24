@@ -23,6 +23,9 @@ class MorphBasic {
   })
   validatedString = 'not empty';
 
+  @Property({name: '*'})
+  map: Record<string, any> = {};
+
   constructor() {
     // must be null-argument
   }
@@ -65,16 +68,21 @@ describe('module: morph', function () {
   const getComplexTransformer = () => getTransformerByGid(MorphComplex) as Transformer;
 
   it('parses MorphTest class', () => {
-    expect(getTransformer()).not.toBeNull();
+    expect(getTransformer()).toBeDefined();
   });
 
-  describe('Transformer (against MorphTest)', () => {
+  describe('Transformer (against MorphBasic & MorphComplex)', () => {
     const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
+
     it('deserializes with @Property', () => {
       expect(morphTestInst.title).toEqual(srcValid.title)
     })
     it('deserializes with @PropertySet', () => {
       expect(morphTestInst.getName()).toEqual(srcValid.sourceName)
+    })
+    it('serializes with @Property and @PropertyGet', () => {
+      const inst = getTransformer().serialize(morphTestInst);
+      expect(inst).toEqual({...srcValid, validatedString: 'not empty'});
     })
 
     it('deserializes and fails @Property.required (key absent)', () => {
@@ -101,23 +109,6 @@ describe('module: morph', function () {
         expect((err as ObjectError).fieldErrors.title).toEqual({message: 'required'})
       }
     })
-    // @todo deserializes and fails @Property.required for (type=number, type=enum)
-    // @todo implement and test enum
-    // @todo implement and test *
-    it('deserializes complex value', () => {
-      const src = {
-        name: 'outerObject',
-        basic: {
-          title: 'inner',
-          validatedString: 'vs',
-          sourceName: 'basic'
-        }
-      }
-      const t =  getComplexTransformer();
-      const inst = t.deserialize(src)
-      expect(t.serialize(inst)).toEqual(src);
-    })
-
     it('deserializes and fails @Property.validator', () => {
       try {
         const inst = getTransformer().deserialize({...srcValid, validatedString: ''});
@@ -126,10 +117,28 @@ describe('module: morph', function () {
         expect((err as ObjectError).fieldErrors).toEqual({validatedString: {message: 'Must not be empty'}})
       }
     })
+    // @todo deserializes and fails @Property.required for (type=number, type=enum)
+    // @todo implement and test enum
+    // @todo implement and test polymorph
 
-    it('serializes with @Property and @PropertyGet', () => {
-      const inst = getTransformer().serialize(morphTestInst);
-      expect(inst).toEqual({...srcValid, validatedString: 'not empty'});
+    it('deserializes/serializes complex value', () => {
+      const src = {
+        name: 'outerObject',
+        basic: {
+          title: 'inner',
+          validatedString: 'vs',
+          sourceName: 'basic'
+        }
+      }
+      const t = getComplexTransformer();
+      const inst = t.deserialize(src)
+      expect(t.serialize(inst)).toEqual(src);
+    })
+    it('deserializes/serializes map value with catch-all *', () => {
+      const t = getTransformer();
+      const src = {...srcValid, validatedString: 'x', key1: 1, key2: 'b'}
+      const inst = t.deserialize(src);
+      expect(t.serialize(inst)).toEqual(src)
     })
   })
 });

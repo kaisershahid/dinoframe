@@ -1,6 +1,8 @@
 import {DecoratedMorphClass, ObjectError, TransformerPropertyDef} from "./types";
 import {getTransformerByGid} from "./decorators";
 
+export const NAME_CATCH_ALL = '*';
+
 export class TransformerError extends Error {
   constructor(message: string) {
     super(message);
@@ -52,20 +54,18 @@ export class Transformer {
   deserialize<T extends any = any>(source: any): T {
     const inst = (new this.clazz()) as T;
     const errors: Record<string, any> = {};
-    let errCount = 0;
 
-    // @todo support '*' name
-    for (const name in this.propertyDefs) {
-      const def = this.propertyDefs[name];
-      let val = source[name];
+    let catchAllDef: TransformerPropertyDef = null as any;
+    const keysProcessed: Record<string, string> = {};
 
+    const doSet = (inst: any, val: any, def: TransformerPropertyDef) => {
+      const name = def.name;
       // assumes name key not present, so skip (but check required first)
       if (val === undefined || val === null) {
         if (def.required) {
           errors[name] = {message: 'required'};
-          errCount++;
         }
-        continue;
+        return;
       }
 
       // @todo cast to type if defined
@@ -75,21 +75,24 @@ export class Transformer {
       }
 
       if (def.setter) {
-        inst[def.setter](val);
+        try {
+          inst[def.setter](val);
+        } catch (err) {
+          errors[name] = {message: err.message, exception: err};
+          return;
+        }
       } else if (def.propertyName) {
         if (def.validator) {
           const valError = def.validator(val, name);
           if (valError) {
             errors[name] = valError;
-            errCount++;
+            return;
           }
-          continue;
         } else if (def.required) {
           // @todo need type-specific?
           if (val === '' || isNaN(val)) {
             errors[name] = {message: 'required'};
-            errCount++;
-            continue;
+            return;
           }
         }
 
@@ -97,11 +100,35 @@ export class Transformer {
       } else {
         throw new TransformerError(`deserialize(${this.clazz.name}): ${name} does not have property/setter defined`)
       }
+    }
+
+    for (const name in this.propertyDefs) {
+      const def = this.propertyDefs[name];
+      if (name == '*') {
+        catchAllDef = def;
+        continue;
+      }
+
+      let val = source[name];
+      keysProcessed[name] = name;
+
+      doSet(inst, val, def);
 
       // @todo check if val is complex and serialize further
     }
 
-    if (errCount > 0) {
+    if (catchAllDef) {
+      let subset: any = {};
+      for (const key in source) {
+        if (!keysProcessed[key]) {
+          subset[key] = source[key];
+        }
+      }
+      doSet(inst, subset, catchAllDef);
+    }
+
+
+    if (Object.keys(errors).length > 0) {
       throw new ObjectError(this.clazz.name, errors);
     }
 
@@ -112,8 +139,14 @@ export class Transformer {
 
   serialize(source: any): any {
     const map: any = {};
+    let catchAllDef: TransformerPropertyDef = null as any;
 
     for (const name in this.propertyDefs) {
+      if (name == '*') {
+        catchAllDef = this.propertyDefs[name];
+        continue;
+      }
+
       const def = this.propertyDefs[name];
       let val: any;
       if (def.getter) {
@@ -124,8 +157,23 @@ export class Transformer {
         // @todo exception?
       }
 
-      // @todo check if val is complex and serialize further
+      if (typeof def.type == 'function') {
+        val = this.serializeNested(val, def.type as typeof Function);
+      }
+
       map[name] = val;
+    }
+
+    if (catchAllDef) {
+      let subset: any = {};
+      if (catchAllDef.getter) {
+        subset = source[catchAllDef.getter];
+      } else if (catchAllDef.propertyName) {
+        subset = source[catchAllDef.propertyName];
+      }
+      for (const key in subset) {
+        map[key] = subset[key];
+      }
     }
 
     return map;
@@ -138,6 +186,15 @@ export class Transformer {
     } else {
       // @todo pojoTransformer?
       return val;
+    }
+  }
+
+  private serializeNested(val: any, clazz: typeof Function) {
+    const transformer = getTransformerByGid(clazz);
+    if (transformer) {
+      return transformer.serialize(val);
+    } else {
+      return null;
     }
   }
 }
