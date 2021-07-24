@@ -223,6 +223,7 @@ export class DecoratedClassBuilder<Clazz extends object = any,
     Parameter>("", "");
 
   private finalized: DecoratedClass[] = [];
+  private map: Record<string, DecoratedClass> = {};
   private provider: string;
 
   constructor(provider: string) {
@@ -244,8 +245,13 @@ export class DecoratedClassBuilder<Clazz extends object = any,
       // can avoid boilerplate that needs to process the last seen class (since there's
       // no decorator-end event, we'd have to manually do this).
       this.finalized.push(this.cur);
+      this.map[gid] = this.cur;
       addToGlobalRegistry(gid, this.cur);
     }
+  }
+
+  getByGid(gid: string) {
+    return this.map[gid];
   }
 
   initProperty(

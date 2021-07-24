@@ -95,6 +95,7 @@ export const swapConstructorWithSubclass = (subclass: Function) => {
 
 export type GidAccessible = {
   getDecoratorGid(): string;
+  ___gid?: string;
 };
 
 export const hasGidAccessor = (o: any): o is GidAccessible =>
@@ -104,7 +105,10 @@ export const hasGidAccessor = (o: any): o is GidAccessible =>
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
  * returned, otherwise, the class will be
  */
-export const getGid = (o: any) => RegistryGidAccessor(o).getDecoratorGid();
+export const getGid = (o: any) =>  {
+  const acc = RegistryGidAccessor(o);
+  return acc.___gid ?? acc.getDecoratorGid();
+};
 
 /**
  * Attaches `getDecoratorGid(): string` to target for convenient access to GID.
@@ -121,6 +125,7 @@ export const RegistryGidAccessor = <T extends { new (...args: any[]): {} }>(
   (target as any).getDecoratorGid = () => {
     return gid;
   };
+  (target as any).___gid = gid;
 
   return target as any;
 };

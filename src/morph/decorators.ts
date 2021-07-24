@@ -1,5 +1,6 @@
 import {getMorphDecoratorBuilder, PropertyParams} from "./types";
 import {Transformer} from "./transformer";
+import {getGid} from "../decorator/registry";
 
 const builder = getMorphDecoratorBuilder();
 
@@ -39,6 +40,7 @@ export const Validate = () => {
   }
 }
 
+
 export const getMorphDefinitions = () => {
   return builder.getFinalized();
 }
@@ -46,4 +48,10 @@ export const getMorphDefinitions = () => {
 export const getMorphTransformers = () => {
   return getMorphDefinitions().map(r => new Transformer(r
   ))
+}
+
+export const getTransformerByGid = (clazz: any) => {
+  const gid = getGid(clazz);
+  const meta = builder.getByGid(gid);
+  return meta ? new Transformer(meta) : undefined;
 }

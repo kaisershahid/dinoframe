@@ -35,7 +35,7 @@ export type PropertyParams = {
    * Requires key to be present and not empty based on type:
    */
   required?: boolean;
-  type?: 'boolean' | 'string' | 'number' | 'enum'
+  type?: 'boolean' | 'string' | 'number' | 'enum' | Function
 }
 
 export type MethodParams = {

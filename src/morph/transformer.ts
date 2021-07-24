@@ -1,4 +1,5 @@
 import {DecoratedMorphClass, ObjectError, TransformerPropertyDef} from "./types";
+import {getTransformerByGid} from "./decorators";
 
 export class TransformerError extends Error {
   constructor(message: string) {
@@ -56,7 +57,7 @@ export class Transformer {
     // @todo support '*' name
     for (const name in this.propertyDefs) {
       const def = this.propertyDefs[name];
-      const val = source[name];
+      let val = source[name];
 
       // assumes name key not present, so skip (but check required first)
       if (val === undefined || val === null) {
@@ -68,6 +69,10 @@ export class Transformer {
       }
 
       // @todo cast to type if defined
+
+      if (typeof def.type == 'function') {
+        val = this.deserializeNested(val, def.type as typeof Function);
+      }
 
       if (def.setter) {
         inst[def.setter](val);
@@ -124,5 +129,15 @@ export class Transformer {
     }
 
     return map;
+  }
+
+  private deserializeNested(val: any, clazz: typeof Function) {
+    const transformer = getTransformerByGid(clazz);
+    if (transformer) {
+      return transformer.deserialize(val);
+    } else {
+      // @todo pojoTransformer?
+      return val;
+    }
   }
 }

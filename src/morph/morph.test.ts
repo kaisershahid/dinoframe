@@ -4,13 +4,13 @@ import {
   PropertySet,
   PropertyGet,
   Validate,
-  getMorphDefinitions, getMorphTransformers
+  getMorphDefinitions, getMorphTransformers, getTransformerByGid
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
 import {Transformer} from "./transformer";
 
 @Morph()
-class MorphTest {
+class MorphBasic {
   @Property({required: true})
   title = ''
   private name: string = '';
@@ -48,17 +48,28 @@ class MorphTest {
   }
 }
 
+@Morph()
+class MorphComplex {
+  @Property()
+  name = '';
+
+  @Property({
+    type: MorphBasic
+  })
+  basic: MorphBasic = undefined as any;
+}
+
 describe('module: morph', function () {
   const srcValid = {title: 'valid', sourceName: 'valid sourceName'}
-  const getTransformer = () =>
-    getMorphTransformers().filter(t => t.canHandle(MorphTest))[0];
+  const getTransformer = () => getTransformerByGid(MorphBasic) as Transformer;
+  const getComplexTransformer = () => getTransformerByGid(MorphComplex) as Transformer;
 
   it('parses MorphTest class', () => {
     expect(getTransformer()).not.toBeNull();
   });
 
   describe('Transformer (against MorphTest)', () => {
-    const morphTestInst = getTransformer().deserialize<MorphTest>(srcValid);
+    const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
     it('deserializes with @Property', () => {
       expect(morphTestInst.title).toEqual(srcValid.title)
     })
@@ -93,12 +104,25 @@ describe('module: morph', function () {
     // @todo deserializes and fails @Property.required for (type=number, type=enum)
     // @todo implement and test enum
     // @todo implement and test *
+    it('deserializes complex value', () => {
+      const src = {
+        name: 'outerObject',
+        basic: {
+          title: 'inner',
+          validatedString: 'vs',
+          sourceName: 'basic'
+        }
+      }
+      const t =  getComplexTransformer();
+      const inst = t.deserialize(src)
+      expect(t.serialize(inst)).toEqual(src);
+    })
 
     it('deserializes and fails @Property.validator', () => {
       try {
         const inst = getTransformer().deserialize({...srcValid, validatedString: ''});
       } catch (err) {
-        expect(err.message).toEqual('One or more errors for: MorphTest')
+        expect(err.message).toEqual('One or more errors for: MorphBasic')
         expect((err as ObjectError).fieldErrors).toEqual({validatedString: {message: 'Must not be empty'}})
       }
     })
