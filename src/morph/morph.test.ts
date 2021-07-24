@@ -1,5 +1,13 @@
-import {Morph, Property, PropertySet, PropertyGet, Validate} from "./decorators";
+import {
+  Morph,
+  Property,
+  PropertySet,
+  PropertyGet,
+  Validate,
+  getMorphDefinitions, getMorphTransformers
+} from "./decorators";
 import {FieldError, ObjectError} from "./types";
+import {Transformer} from "./transformer";
 
 @Morph()
 class MorphTest {
@@ -33,5 +41,26 @@ class MorphTest {
 }
 
 describe('module: morph', function () {
+  const srcValid = {title: 'valid', sourceName: 'valid sourceName'}
+  const getTransformer = () =>
+    getMorphTransformers().filter(t => t.canHandle(MorphTest))[0];
 
+  it('parses MorphTest class', () => {
+    expect(getTransformer()).not.toBeNull();
+  });
+
+  describe('Transformer (against MorphTest)', () => {
+    const morphTestInst = getTransformer().deserialize<MorphTest>(srcValid);
+    it('deserializes with @Property', () => {
+      expect(morphTestInst.title).toEqual(srcValid.title)
+    })
+    it('deserializes with @PropertySet', () => {
+      expect(morphTestInst.getName()).toEqual(srcValid.sourceName)
+    })
+    // @todo error condition
+    // @todo apply validator
+    it('serializes with @Property and @PropertyGet', () => {
+      expect(getTransformer().serialize(morphTestInst)).toEqual(srcValid);
+    })
+  })
 });
