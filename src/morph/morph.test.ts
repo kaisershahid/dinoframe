@@ -7,71 +7,67 @@ import {
   getMorphDefinitions, getMorphTransformers, getTransformerByGid
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
-import {Transformer} from "./transformer";
+import {Morpher} from "./morpher";
 
-@Morph()
-class MorphBasic {
-  @Property({required: true})
-  title = ''
-  private name: string = '';
-  @Property({
-    validator: (name) => {
-      if (!name) {
-        return {message: 'Must not be empty'}
-      }
-    }
-  })
-  validatedString = 'not empty';
-
-  @Property({name: '*'})
-  map: Record<string, any> = {};
-
-  constructor() {
-    // must be null-argument
-  }
-
-  @PropertySet('sourceName')
-  setName(name: string) {
-    if (!name || name.trim() == '') {
-      throw new FieldError('cannot be empty');
-    }
-    this.name = name;
-  }
-
-  @PropertyGet('sourceName')
-  getName() {
-    return this.name;
-  }
-
-  @Validate()
-  postDeserialize() {
-    if (!this.title) {
-      throw new ObjectError('MorphTest', {title: 'cannot be empty'})
-    }
-  }
-}
-
-@Morph()
-class MorphComplex {
-  @Property()
-  name = '';
-
-  @Property({
-    type: MorphBasic
-  })
-  basic: MorphBasic = undefined as any;
-}
 
 describe('module: morph', function () {
-  const srcValid = {title: 'valid', sourceName: 'valid sourceName'}
-  const getTransformer = () => getTransformerByGid(MorphBasic) as Transformer;
-  const getComplexTransformer = () => getTransformerByGid(MorphComplex) as Transformer;
+  describe('Morpher (against MorphBasic & MorphComplex)', () => {
+    @Morph()
+    class MorphBasic {
+      @Property({required: true})
+      title = ''
+      private name: string = '';
+      @Property({
+        validator: (name) => {
+          if (!name) {
+            return {message: 'Must not be empty'}
+          }
+        }
+      })
+      validatedString = 'not empty';
 
-  it('parses MorphTest class', () => {
-    expect(getTransformer()).toBeDefined();
-  });
+      @Property({name: '*'})
+      map: Record<string, any> = {};
 
-  describe('Transformer (against MorphBasic & MorphComplex)', () => {
+      constructor() {
+        // must be null-argument
+      }
+
+      @PropertySet('sourceName')
+      setName(name: string) {
+        if (!name || name.trim() == '') {
+          throw new FieldError('cannot be empty');
+        }
+        this.name = name;
+      }
+
+      @PropertyGet('sourceName')
+      getName() {
+        return this.name;
+      }
+
+      @Validate()
+      postDeserialize() {
+        if (!this.title) {
+          throw new ObjectError('MorphTest', {title: 'cannot be empty'})
+        }
+      }
+    }
+
+    @Morph()
+    class MorphComplex {
+      @Property()
+      name = '';
+
+      @Property({
+        type: MorphBasic
+      })
+      basic: MorphBasic = undefined as any;
+    }
+
+    const srcValid = {title: 'valid', sourceName: 'valid sourceName'}
+    const getTransformer = () => getTransformerByGid(MorphBasic) as Morpher;
+    const getComplexTransformer = () => getTransformerByGid(MorphComplex) as Morpher;
     const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
 
     it('deserializes with @Property', () => {
@@ -117,9 +113,9 @@ describe('module: morph', function () {
         expect((err as ObjectError).fieldErrors).toEqual({validatedString: {message: 'Must not be empty'}})
       }
     })
+
     // @todo deserializes and fails @Property.required for (type=number, type=enum)
     // @todo implement and test enum
-    // @todo implement and test polymorph
 
     it('deserializes/serializes complex value', () => {
       const src = {
@@ -139,6 +135,101 @@ describe('module: morph', function () {
       const src = {...srcValid, validatedString: 'x', key1: 1, key2: 'b'}
       const inst = t.deserialize(src);
       expect(t.serialize(inst)).toEqual(src)
+    })
+  })
+
+  describe('Morpher polymorphism (agaist MorphPoly)', () => {
+    /**
+     * Defines default structure
+     */
+    @Morph({
+      discriminator: "type",
+      ignoreProps: ['ignorable']
+    })
+    class MorphPoly {
+      @Property({required: true})
+      type: string = null as any;
+
+      @Property({required: true})
+      name: string = '';
+
+      @Property()
+      ignorable = 'ignoreMe';
+    }
+
+    @Morph({
+      inherits: {
+        baseClass: MorphPoly,
+        discriminatorValue: 'typeA'
+      }
+    })
+    class MorphPolyA extends MorphPoly {
+      @Property()
+      propA = '';
+
+      @PropertySet('name')
+      setName(name: string) {
+        this.name = name + '-A';
+      }
+    }
+
+    @Morph({
+      ignoreProps: ['ignorableB'],
+      inherits: {
+        baseClass: MorphPoly,
+        discriminatorValue: 'typeB'
+      }
+    })
+    class MorphPolyB extends MorphPoly {
+      @Property()
+      propB = '';
+
+      @Property()
+      ignorable = 'notIgnoredInB';
+
+      @Property()
+      ignorableB = '';
+
+      @PropertyGet('name')
+      getName() {
+        return 'B-' + this.name;
+      }
+    }
+
+    const srcA = {name: 'instA', type: 'typeA'};
+    const srcB = {name: 'instB', type: 'typeB'};
+    const t = getTransformerByGid(MorphPoly) as Morpher;
+
+    it('deserializes to appropriate subclasses', () => {
+      const instA = t.deserialize<MorphPolyA>(srcA);
+      const instB = t.deserialize<MorphPolyB>(srcB);
+
+      // asserts @PropertySet in A
+      expect(instA.name).toEqual('instA-A');
+      expect(instB.name).toEqual('instB');
+    })
+
+    it('serializes to appropriate maps', () => {
+      const instA = t.deserialize<MorphPolyA>(srcA);
+      const instB = t.deserialize<MorphPolyB>(srcB);
+
+      expect(t.serialize(instA)).toEqual({name: 'instA-A', type: 'typeA', propA: ''});
+      // asserts @PropertyGet in B
+      expect(t.serialize(instB)).toEqual({name: 'B-instB', type: 'typeB', propB: '', ignorable: 'notIgnoredInB'});
+    })
+
+    it('fails deserializing unsupport discrinator value', () => {
+      try {
+        const inst = t.deserialize({})
+      } catch (err) {
+        expect(err.message).toEqual("MorphPoly: could not map type=undefined to a subclass: subclass is not a constructor")
+      }
+
+      try {
+        const inst = t.deserialize({type: 'C'})
+      } catch (err) {
+        expect(err.message).toEqual("MorphPoly: could not map type=C to a subclass: subclass is not a constructor")
+      }
     })
   })
 });
