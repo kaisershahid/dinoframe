@@ -7,6 +7,7 @@ import {
 } from "./types";
 import {getMorpherDefByGid, getMorpherById} from "./decorators";
 import cloneDeep from 'lodash.clonedeep';
+import {type} from "os";
 
 export const NAME_CATCH_ALL = '*';
 
@@ -49,8 +50,8 @@ export class Morpher {
 
   private initProperties() {
     for (const propertyName in this.originalMeta.properties) {
-      const {name, validator, type, enumValues} = this.originalMeta.properties[propertyName][0];
-      this.updateProperty(name, {propertyName, validator, type, enumValues});
+      const {name, ...rest} = this.originalMeta.properties[propertyName][0];
+      this.updateProperty(name, rest);
     }
   }
 
@@ -103,8 +104,11 @@ export class Morpher {
     }
 
     if (typeof def.type == 'function') {
-      // @todo if source value is an array, generate an array of deserialized objects
-      val = this.deserializeNested(val, def.type as typeof Function);
+      if (val instanceof Array) {
+        val = val.map(v => this.deserializeNested(v, def.type as typeof Function))
+      } else {
+        val = this.deserializeNested(val, def.type as typeof Function);
+      }
     } else {
       try {
         ValueFactory.validateValue(val, def);
@@ -128,8 +132,7 @@ export class Morpher {
           return;
         }
       } else if (def.required) {
-        // @todo need type-specific?
-        if (val === '' || isNaN(val)) {
+        if (val === '' || val === null) {
           errors[name] = {message: 'required'};
           return;
         }
@@ -235,7 +238,11 @@ export class Morpher {
       }
 
       if (typeof def.type == 'function') {
-        val = this.serializeNested(val, def.type as typeof Function);
+        if (val instanceof Array) {
+          val = val.map(v => this.serializeNested(v, def.type as typeof Function));
+        } else {
+          val = this.serializeNested(val, def.type as typeof Function);
+        }
       }
 
       map[name] = val;
@@ -316,6 +323,35 @@ export class Morpher {
 
 export class ValueFactory {
   static validateValue(val: any, def: TransformerPropertyDef) {
+    if (def.listType == 'strict' && !(val instanceof Array)) {
+      throw new FieldError(`listType=strict, ${typeof val} given`)
+    }
+
+    if (val instanceof Array) {
+      if (!def.listType) {
+        throw new FieldError(`listType=none, array given`);
+      }
+
+      let errors: any = {};
+      let err = 0;
+      for (let i = 0; i < val.length; i++) {
+        try {
+          this.assertProperType(val[i], def);
+        } catch (e) {
+          errors[i] = e.message;
+          err++;
+        }
+      }
+
+      if (err) {
+        throw new FieldError(`one or more errors: ${JSON.stringify(errors)}`);
+      }
+    } else {
+      this.assertProperType(val, def);
+    }
+  }
+
+  static assertProperType(val: any, def: TransformerPropertyDef) {
     switch (def.type) {
       case 'boolean':
         if (typeof val != 'boolean') {

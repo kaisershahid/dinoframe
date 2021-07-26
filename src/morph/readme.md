@@ -139,6 +139,13 @@ m.deserialize({type: 'B'})
 
 The `@Morph` decorator supports `{ignoreProps: []}` -- each property in the list will be excluded from the serialized map.
 
+## Mixing `@Property*` decorators
+
+`@Property` can be used in conjunction with `@PropertySet` and `@PropertyGet`. The semantics are as follows:
+
+- if `@PropertySet` is defined, validation/deserialization is deferred to that method
+- if `@PropertyGet` is defined, getting value is deferred to that method
+
 ## Semantics of Inheritance
 
 The morpher will deserialize/serialize subclasses by applying the chain of ancestor definitions to an instance.

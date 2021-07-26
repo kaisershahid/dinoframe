@@ -7,7 +7,7 @@ import {
   getMorpherDefinitions, getMorphers, getMorpherById
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
-import {Morpher} from "./index";
+import {Morpher, ValueFactory} from "./index";
 
 
 describe('module: morph', function () {
@@ -62,7 +62,7 @@ describe('module: morph', function () {
       @Finalize()
       postDeserialize() {
         if (!this.title) {
-          throw new ObjectError('MorphTest', {title: 'cannot be empty'})
+          throw new ObjectError('MorphBasic', {title: 'cannot be empty'})
         }
       }
     }
@@ -78,7 +78,24 @@ describe('module: morph', function () {
       basic: MorphBasic = undefined as any;
     }
 
-    const srcValid = {title: 'valid', sourceName: 'valid sourceName', anEnum: 'e1', aNumber: 0, aBoolean: false}
+    @Morph()
+    class MorphComplexArr {
+      @Property()
+      name = '';
+
+      @Property({
+        type: MorphBasic
+      })
+      basic: MorphBasic[] = [];
+    }
+
+    const srcValid = {
+      title: 'valid',
+      sourceName: 'valid sourceName',
+      anEnum: 'e1',
+      aNumber: 0,
+      aBoolean: false
+    }
     const getTransformer = () => getMorpherById(MorphBasic) as Morpher;
     const getComplexTransformer = () => getMorpherById(MorphComplex) as Morpher;
     const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
@@ -94,20 +111,20 @@ describe('module: morph', function () {
       expect(inst).toEqual({...srcValid, validatedString: 'not empty'});
     })
 
-    it.only('deserializes and fails @Finalize', () => {
+    it('deserializes and fails @Finalize', () => {
       try {
         getTransformer().deserialize({...srcValid, title: ''});
         throw new Error('expected error')
       } catch (err) {
-        expect(err.message).toEqual('One or more errors for: MorphTest');
-        expect(err.fieldErrors.title).toEqual('cannot be empty')
+        expect(err.message).toEqual('One or more errors for: MorphBasic');
+        expect(err.fieldErrors.title).toEqual({message: 'required'})
       }
     })
     it('deserializes and fails @Property.required (key absent)', () => {
       try {
         getTransformer().deserialize({});
       } catch (err) {
-        expect(err.message).toEqual('One or more errors for: MorphTest')
+        expect(err.message).toEqual('One or more errors for: MorphBasic')
         expect((err as ObjectError).fieldErrors.title).toEqual({message: 'required'})
       }
     })
@@ -115,7 +132,7 @@ describe('module: morph', function () {
       try {
         getTransformer().deserialize({title: null});
       } catch (err) {
-        expect(err.message).toEqual('One or more errors for: MorphTest')
+        expect(err.message).toEqual('One or more errors for: MorphBasic')
         expect((err as ObjectError).fieldErrors.title).toEqual({message: 'required'})
       }
     })
@@ -123,7 +140,7 @@ describe('module: morph', function () {
       try {
         getTransformer().deserialize({title: ''});
       } catch (err) {
-        expect(err.message).toEqual('One or more errors for: MorphTest')
+        expect(err.message).toEqual('One or more errors for: MorphBasic')
         expect((err as ObjectError).fieldErrors.title).toEqual({message: 'required'})
       }
     })
@@ -195,5 +212,138 @@ describe('module: morph', function () {
       const inst = t.deserialize(src);
       expect(t.serialize(inst)).toEqual(src)
     })
+    it('deserializes complex array value', () => {
+      const src = {
+        name: 'outerObject',
+        basic: [{
+          title: 'inner',
+          validatedString: 'vs',
+          sourceName: 'basic',
+          anEnum: 'f2',
+          aNumber: 5,
+          aBoolean: true
+        },
+          {
+            title: 'inner2',
+            validatedString: 'vs2',
+            sourceName: 'basic2',
+            anEnum: 'e1',
+            aNumber: -1,
+            aBoolean: false
+          }]
+      }
+      const m = getMorpherById(MorphComplexArr);
+      const inst = m?.deserialize(src);
+      expect(m?.serialize(inst)).toEqual(src)
+    })
   })
+
+  describe('ValueFactory', () => {
+    const getMessage = (val: any, def: any) => {
+      try {
+        ValueFactory.validateValue(val, def);
+        return 'success';
+      } catch (e) {
+        return e.message;
+      }
+    }
+
+    it('listType=strict: rejects scalar', () => {
+      expect(getMessage('a', {listType: 'strict'}))
+        .toEqual("listType=strict, string given");
+    })
+    it('listType=strict: accepts array', () => {
+      expect(getMessage(['a'], {listType: 'strict'}))
+        .toEqual("success");
+    })
+    it('listType=mixed: accepts scalar', () => {
+      expect(getMessage('a', {listType: 'mixed'}))
+        .toEqual("success");
+    })
+    it('listType=mixed: accepts array', () => {
+      expect(getMessage(['a'], {listType: 'mixed'}))
+        .toEqual("success");
+    })
+    it('listType=undefined|none: rejects array', () => {
+      expect(getMessage(['a'], {}))
+        .toEqual("listType=none, array given");
+    })
+
+    it('type=string, val=[string,number]; rejects value', () => {
+      expect(getMessage(['a', 1], {listType: 'mixed', type: 'string'}))
+        .toEqual("one or more errors: {\"1\":\"not a string: 1\"}");
+    });
+
+    [
+      {
+        type: 'boolean',
+        success: true,
+        val: true
+      },
+      {
+        type: 'boolean',
+        success: false,
+        val: 'true'
+      },
+      {
+        type: 'number',
+        success: true,
+        val: 1
+      },
+      {
+        type: 'number',
+        success: false,
+        val: '1'
+      },
+      {
+        type: 'string',
+        success: true,
+        val: 'true'
+      },
+      {
+        type: 'string',
+        success: false,
+        val: true
+      },
+      {
+        type: 'enum',
+        success: true,
+        val: 'a',
+        enumValues: ['a', 'b']
+      },
+      {
+        type: 'enum',
+        success: false,
+        val: 'ab',
+        enumValues: ['a', 'b']
+      },
+      {
+        type: 'enum',
+        listType: 'mixed',
+        success: true,
+        val: ['a'],
+        enumValues: ['a', 'b']
+      },
+      {
+        type: 'enum',
+        listType: 'mixed',
+        success: false,
+        val: ['ab'],
+        enumValues: ['a', 'b'],
+        expectedErr: "one or more errors: {\"0\":\"ab does not match any enum values: [a; b]\"}"
+      }
+    ].forEach(({type, success, val, enumValues, listType, expectedErr}) => {
+      it(`${listType ? 'listType=' + listType + ', ' : ''}type=${type}, val=${typeof val}; ${success ? 'accepts' : 'rejects'} value`, () => {
+        expectedErr = expectedErr ?? (success ?
+          'success' :
+          (
+            enumValues ?
+              `${val} does not match any enum values: [${enumValues.join('; ')}]` :
+              `not a ${type}: ${JSON.stringify(val)}`
+          ))
+        expect(getMessage(val, {type, enumValues, listType}))
+          .toEqual(expectedErr)
+      })
+    });
+  });
 });
