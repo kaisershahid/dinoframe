@@ -5,32 +5,28 @@ import {
   ObjectError,
   PropertyParams
 } from "./types";
-import {Morpher} from "./morpher";
+import {Morpher} from "./index";
 import {getGid, swapConstructorWithSubclass} from "../decorator/registry";
+import {type} from "os";
 
 const builder = getMorphDecoratorBuilder();
 
 /**
+ * Class -- marks a class as being morphable.
  */
 export const Morph = (params: MorphParams = {}) => {
   return (target: any) => {
-    if (params.discriminator) {
-      // attach static factory for discrminator matching
+    if (params.discriminator && !params.inherits) {
+      // create static map that subclasses will populate
       const discriminatorCol = params.discriminator;
       target.___discriminatorCol = discriminatorCol;
       target.___discriminatorMap = {};
-      target.___getInstanceForDiscriminatorValue = (dvalue: any) => {
-        if (!target.___discriminatorMap[dvalue]) {
-          throw new ObjectError(target.name, {
-            [discriminatorCol]: `cannot convert discriminator value to class: ${dvalue}`
-          })
-        }
-      }
     }
 
     builder.pushClass(target, {...params}, 'Morph');
 
-    if (params.inherits) {
+    if (params.inherits?.discriminatorValue && !params.discriminator) {
+      // populate static map of parent
       const parent = params.inherits.baseClass;
       if (!parent) {
         throw new MorphError(`${target.name}: inherits.baseClass not specified`)
@@ -47,6 +43,9 @@ export const Morph = (params: MorphParams = {}) => {
   }
 }
 
+/**
+ * Property -- the property to map a source value onto.
+ */
 export const Property = (params: Partial<PropertyParams> = {}) => {
   return (target: any, name: string) => {
     if (params.type == 'enum' && (!params.enumValues || params.enumValues.length == 0)) {
@@ -56,12 +55,18 @@ export const Property = (params: Partial<PropertyParams> = {}) => {
   }
 }
 
+/**
+ * Method -- the setter for property with given name. Overrides @Property for set.
+ */
 export const PropertySet = (name: string) => {
   return (target: any, methodName: string, desc: PropertyDescriptor) => {
     builder.pushMethod(target, methodName, {name, setter: methodName}, 'PropertySet')
   }
 }
 
+/**
+ * Method -- the getter for property with given name. Overides @Property for get.
+ */
 export const PropertyGet = (name: string) => {
   return (target: any, methodName: string, desc: PropertyDescriptor) => {
     builder.pushMethod(target, methodName, {name, getter: methodName}, 'PropertyGet')
@@ -85,9 +90,7 @@ export const Finalize = () => {
  * @todo
  */
 export const Serialize = () => {
-  return (target: any, name: string, desc: PropertyDescriptor) => {
-
-  }
+  throw new Error('not implemented');
 }
 
 /**
@@ -96,27 +99,27 @@ export const Serialize = () => {
  * @todo
  */
 export const Deserialize = () => {
-  return (target: any, name: string, desc: PropertyDescriptor) => {
-
-  }
+  throw new Error('not implemented');
 }
 
-export const getMorphDefinitions = () => {
+export const getMorpherDefinitions = () => {
+  // @todo deep copy
   return builder.getFinalized();
 }
 
-export const getMorphTransformers = () => {
-  return getMorphDefinitions().map(r => new Morpher(r
-  ))
+export const getMorphers = () => {
+  return getMorpherDefinitions().map(r => new Morpher(r))
 }
 
-export const getMorphDefByGid = (clazz: any) => {
-  const gid = getGid(clazz);
-  return builder.getByGid(gid);;
+export const getMorpherDefByGid = (clazzOrGid: any) => {
+  if (!clazzOrGid) {
+    return;
+  }
+  const gid = typeof clazzOrGid == 'string' ? clazzOrGid : getGid(clazzOrGid);
+  return builder.getByGid(gid);
 }
 
-
-export const getTransformerByGid = (clazz: any) => {
-  const meta = getMorphDefByGid(clazz);
+export const getMorpherById = (clazzOrGid: any) => {
+  const meta = getMorpherDefByGid(clazzOrGid);
   return meta ? new Morpher(meta) : undefined;
 }

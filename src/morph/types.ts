@@ -37,8 +37,9 @@ export type MorphParams = {
    */
   discriminator?: string;
   /**
-   * For subclasses of the polymorphic type, defines which parent class it belongs
-   * to and what the discriminator value should be.
+   * For subclasses in general, defines which parent class this class belongs to.
+   * If the subclass is used for polymorphism, the discriminatorValue must also
+   * be defined to properly associate it.
    */
   inherits?: {
     baseClass?: any;

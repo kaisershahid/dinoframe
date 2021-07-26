@@ -1,0 +1,342 @@
+import {
+  DecoratedMorphClass,
+  FieldError,
+  MorphError,
+  ObjectError,
+  TransformerPropertyDef
+} from "./types";
+import {getMorpherDefByGid, getMorpherById} from "./decorators";
+import cloneDeep from 'lodash.clonedeep';
+
+export const NAME_CATCH_ALL = '*';
+
+export class Morpher {
+  private clazz: any;
+  private baseClass: any;
+  private originalMeta: DecoratedMorphClass;
+  propertyDefs: Record<string, TransformerPropertyDef> = {};
+  discriminatorCol = '';
+  subclasses: Record<string, typeof Function> = {};
+  ignoreProps: string[] = [];
+  finalize?: string;
+
+  constructor(decoratedMeta: DecoratedMorphClass) {
+    this.originalMeta = decoratedMeta;
+    this.clazz = decoratedMeta.clazz;
+
+    const morphMeta = decoratedMeta.metadata[0];
+    this.ignoreProps = morphMeta.ignoreProps ?? [];
+    // a base class without discriminatorValue means we apply parent's decorators too
+    if (morphMeta.inherits?.baseClass && !morphMeta.inherits.discriminatorValue) {
+      this.baseClass = morphMeta.inherits.baseClass;
+    }
+
+    if (this.clazz.___discriminatorMap) {
+      this.discriminatorCol = this.clazz.___discriminatorCol;
+      this.subclasses = {...this.clazz.___discriminatorMap};
+    }
+    this.init();
+  }
+
+  private init() {
+    this.initProperties();
+    this.initMethods();
+  }
+
+  canHandle(clazz: any) {
+    return this.clazz === clazz;
+  }
+
+  private initProperties() {
+    for (const propertyName in this.originalMeta.properties) {
+      const {name, validator, type, enumValues} = this.originalMeta.properties[propertyName][0];
+      this.updateProperty(name, {propertyName, validator, type, enumValues});
+    }
+  }
+
+  private initMethods() {
+    for (const method of Object.values(this.originalMeta.methods)) {
+      const def = method.metadata[0];
+      if (def.finalize) {
+        this.finalize = def.finalize;
+      } else {
+        this.updateProperty(def.name, def);
+      }
+    }
+  }
+
+  private updateProperty(name: string, def: Partial<TransformerPropertyDef>) {
+    if (!this.propertyDefs[name]) {
+      this.propertyDefs[name] = {name}
+    }
+
+    this.propertyDefs[name] = {...this.propertyDefs[name], ...def}
+  }
+
+  /**
+   * Returns either an instance of the current class or, if polymorphism is
+   * detected, attempts to return a subclass instance.
+   * @return The effective instance along with its subclass constructor (optional)
+   */
+  makeInstance(source: any): any {
+    if (this.discriminatorCol) {
+      try {
+        const dvalue = source[this.discriminatorCol];
+        const subclass = this.subclasses[dvalue];
+        return [new subclass(), subclass];
+      } catch (err) {
+        throw new MorphError(`${this.clazz.name}: could not map ${this.clazz.___discriminatorCol}=${source[this.clazz.___discriminatorCol]} to a subclass: ${err.message}`);
+      }
+    } else {
+      return [new this.clazz(), null];
+    }
+  }
+
+  doSetValue(inst: any, val: any, def: TransformerPropertyDef, errors: Record<string, any>) {
+    const name = def.name;
+    // assumes name key not present, so skip (but check required first)
+    if (val === undefined || val === null) {
+      if (def.required) {
+        errors[name] = {message: 'required'};
+      }
+      return;
+    }
+
+    if (typeof def.type == 'function') {
+      // @todo if source value is an array, generate an array of deserialized objects
+      val = this.deserializeNested(val, def.type as typeof Function);
+    } else {
+      try {
+        ValueFactory.validateValue(val, def);
+      } catch (e) {
+        errors[name] = e
+      }
+    }
+
+    if (def.setter) {
+      try {
+        inst[def.setter](val);
+      } catch (err) {
+        errors[name] = {message: err.message, exception: err};
+        return;
+      }
+    } else if (def.propertyName) {
+      if (def.validator) {
+        const valError = def.validator(val, name);
+        if (valError) {
+          errors[name] = valError;
+          return;
+        }
+      } else if (def.required) {
+        // @todo need type-specific?
+        if (val === '' || isNaN(val)) {
+          errors[name] = {message: 'required'};
+          return;
+        }
+      }
+
+      inst[def.propertyName] = val;
+    }
+  }
+
+  doDeserialize<T extends any = any>(inst: any, source: any): T {
+    const errors: Record<string, any> = {};
+
+    let catchAllDef: TransformerPropertyDef = null as any;
+    const keysProcessed: Record<string, string> = {};
+
+    for (const name in this.propertyDefs) {
+      const def = this.propertyDefs[name];
+      if (name == NAME_CATCH_ALL) {
+        catchAllDef = def;
+        continue;
+      }
+
+      let val = source[name];
+      keysProcessed[name] = name;
+
+      this.doSetValue(inst, val, def, errors);
+    }
+
+    if (catchAllDef) {
+      let subset: any = {};
+      for (const key in source) {
+        if (!keysProcessed[key]) {
+          subset[key] = source[key];
+        }
+      }
+      this.doSetValue(inst, subset, catchAllDef, errors);
+    }
+
+    if (Object.keys(errors).length > 0) {
+      throw new ObjectError(this.clazz.name, errors);
+    }
+
+    if (this.finalize) {
+      inst[this.finalize]();
+    }
+
+    return inst;
+  }
+
+  getAncestorStack(): Morpher[] {
+    const mstack: Morpher[] = [this];
+    let t = getMorpherById(this.baseClass);
+    while (t) {
+      mstack.unshift(t);
+      t = getMorpherById(t.baseClass);
+    }
+    return mstack;
+  }
+
+  /**
+   * Build morpher stack and apply from highest to lowest
+   */
+  deserializeAncestors(inst: any, source: any) {
+    const mstack = this.getAncestorStack();
+    for (const tr of mstack) {
+      tr.doDeserialize(inst, source);
+    }
+  }
+
+  deserialize<T extends any = any>(source: any): T {
+    const [inst, subclass] = this.makeInstance(source) as [T, any];
+
+    if (this.baseClass) {
+      this.deserializeAncestors(inst, source);
+    } else {
+      this.doDeserialize(inst, source);
+    }
+
+    if (subclass) {
+      // continue populating using subclass rules
+      const subtransformer = getMorpherById(subclass);
+      subtransformer?.doDeserialize(inst, source);
+    }
+
+    return inst;
+  }
+
+  doSerialize(map: any, source: any) {
+    let catchAllDef: TransformerPropertyDef = null as any;
+
+    for (const name in this.propertyDefs) {
+      if (name == NAME_CATCH_ALL) {
+        catchAllDef = this.propertyDefs[name];
+        continue;
+      }
+
+      const def = this.propertyDefs[name];
+      let val: any;
+      if (def.getter) {
+        val = source[def.getter]();
+      } else if (def.propertyName) {
+        val = source[def.propertyName];
+      }
+
+      if (typeof def.type == 'function') {
+        val = this.serializeNested(val, def.type as typeof Function);
+      }
+
+      map[name] = val;
+    }
+
+    if (catchAllDef) {
+      let subset: any = {};
+      if (catchAllDef.getter) {
+        subset = source[catchAllDef.getter];
+      } else if (catchAllDef.propertyName) {
+        subset = source[catchAllDef.propertyName];
+      }
+      for (const key in subset) {
+        map[key] = subset[key];
+      }
+    }
+
+    for (const ignoreProp of this.ignoreProps) {
+      delete map[ignoreProp];
+    }
+  }
+
+  serializeAncestors(map: any, source: any) {
+    const mstack = this.getAncestorStack();
+    for (const t of mstack) {
+      t.doSerialize(map, source);
+    }
+  }
+
+  serialize(source: any): any {
+    const map: any = {};
+
+    if (this.baseClass) {
+      this.serializeAncestors(map, source);
+    } else {
+      this.doSerialize(map, source);
+    }
+
+    if (this.discriminatorCol) {
+      // serialize and copy non-undefined values into map if polymorph
+      const subclass = this.subclasses[map[this.discriminatorCol]];
+      if (subclass) {
+        const subclassSer = this.serializeNested(source, subclass);
+        for (const _key in subclassSer) {
+          const subVal = subclassSer[_key];
+          // case: PropertySet defined on subclass but not PropertyGet
+          if (subVal !== undefined) {
+            map[_key] = subVal;
+          }
+        }
+      }
+      // @todo else exception?
+    }
+
+    return map;
+  }
+
+  private deserializeNested(val: any, clazz: typeof Function) {
+    const transformer = getMorpherById(clazz);
+    if (transformer) {
+      return transformer.deserialize(val);
+    } else {
+      // @todo pojoTransformer?
+      return val;
+    }
+  }
+
+  private serializeNested(val: any, clazz: typeof Function) {
+    const transformer = getMorpherById(clazz);
+    if (transformer) {
+      return transformer.serialize(val);
+    } else {
+      // @todo pojoSerialize?
+      return null;
+    }
+  }
+}
+
+export class ValueFactory {
+  static validateValue(val: any, def: TransformerPropertyDef) {
+    switch (def.type) {
+      case 'boolean':
+        if (typeof val != 'boolean') {
+          throw new FieldError(`not a boolean: ${JSON.stringify(val)}`);
+        }
+        break;
+      case 'string':
+        if (typeof val != 'string') {
+          throw new FieldError(`not a string: ${JSON.stringify(val)}`)
+        }
+        break;
+      case 'number':
+        if (typeof val != 'number') {
+          throw new FieldError(`not a number: ${JSON.stringify(val)}`)
+        }
+        break;
+      case "enum":
+        if (!def.enumValues?.includes(val)) {
+          throw new FieldError(`${val} does not match any enum values: [${def.enumValues?.join('; ')}]`);
+        }
+        break;
+    }
+  }
+}

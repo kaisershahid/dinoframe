@@ -4,10 +4,10 @@ import {
   PropertySet,
   PropertyGet,
   Finalize,
-  getMorphDefinitions, getMorphTransformers, getTransformerByGid
+  getMorpherDefinitions, getMorphers, getMorpherById
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
-import {Morpher} from "./morpher";
+import {Morpher} from "./index";
 
 
 describe('module: morph', function () {
@@ -79,8 +79,8 @@ describe('module: morph', function () {
     }
 
     const srcValid = {title: 'valid', sourceName: 'valid sourceName', anEnum: 'e1', aNumber: 0, aBoolean: false}
-    const getTransformer = () => getTransformerByGid(MorphBasic) as Morpher;
-    const getComplexTransformer = () => getTransformerByGid(MorphComplex) as Morpher;
+    const getTransformer = () => getMorpherById(MorphBasic) as Morpher;
+    const getComplexTransformer = () => getMorpherById(MorphComplex) as Morpher;
     const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
 
     it('deserializes with @Property', () => {
@@ -194,101 +194,6 @@ describe('module: morph', function () {
       const src = {...srcValid, validatedString: 'x', key1: 1, key2: 'b'}
       const inst = t.deserialize(src);
       expect(t.serialize(inst)).toEqual(src)
-    })
-  })
-
-  describe('Morpher polymorphism (agaist MorphPoly)', () => {
-    /**
-     * Defines default structure
-     */
-    @Morph({
-      discriminator: "type",
-      ignoreProps: ['ignorable']
-    })
-    class MorphPoly {
-      @Property({required: true})
-      type: string = null as any;
-
-      @Property({required: true})
-      name: string = '';
-
-      @Property()
-      ignorable = 'ignoreMe';
-    }
-
-    @Morph({
-      inherits: {
-        baseClass: MorphPoly,
-        discriminatorValue: 'typeA'
-      }
-    })
-    class MorphPolyA extends MorphPoly {
-      @Property()
-      propA = '';
-
-      @PropertySet('name')
-      setName(name: string) {
-        this.name = name + '-A';
-      }
-    }
-
-    @Morph({
-      ignoreProps: ['ignorableB'],
-      inherits: {
-        baseClass: MorphPoly,
-        discriminatorValue: 'typeB'
-      }
-    })
-    class MorphPolyB extends MorphPoly {
-      @Property()
-      propB = '';
-
-      @Property()
-      ignorable = 'notIgnoredInB';
-
-      @Property()
-      ignorableB = '';
-
-      @PropertyGet('name')
-      getName() {
-        return 'B-' + this.name;
-      }
-    }
-
-    const srcA = {name: 'instA', type: 'typeA'};
-    const srcB = {name: 'instB', type: 'typeB'};
-    const t = getTransformerByGid(MorphPoly) as Morpher;
-
-    it('deserializes to appropriate subclasses', () => {
-      const instA = t.deserialize<MorphPolyA>(srcA);
-      const instB = t.deserialize<MorphPolyB>(srcB);
-
-      // asserts @PropertySet in A
-      expect(instA.name).toEqual('instA-A');
-      expect(instB.name).toEqual('instB');
-    })
-
-    it('serializes to appropriate maps', () => {
-      const instA = t.deserialize<MorphPolyA>(srcA);
-      const instB = t.deserialize<MorphPolyB>(srcB);
-
-      expect(t.serialize(instA)).toEqual({name: 'instA-A', type: 'typeA', propA: ''});
-      // asserts @PropertyGet in B
-      expect(t.serialize(instB)).toEqual({name: 'B-instB', type: 'typeB', propB: '', ignorable: 'notIgnoredInB'});
-    })
-
-    it('fails deserializing unsupport discrinator value', () => {
-      try {
-        const inst = t.deserialize({})
-      } catch (err) {
-        expect(err.message).toEqual("MorphPoly: could not map type=undefined to a subclass: subclass is not a constructor")
-      }
-
-      try {
-        const inst = t.deserialize({type: 'C'})
-      } catch (err) {
-        expect(err.message).toEqual("MorphPoly: could not map type=C to a subclass: subclass is not a constructor")
-      }
     })
   })
 });
