@@ -22,9 +22,22 @@ describe('module: morph', function () {
           if (!name) {
             return {message: 'Must not be empty'}
           }
-        }
+        },
+        type: 'string'
       })
       validatedString = 'not empty';
+
+      @Property({
+        type: 'enum',
+        enumValues: ['e1', 'f2']
+      })
+      anEnum = '';
+
+      @Property({type: 'number'})
+      aNumber = 0;
+
+      @Property({type: 'boolean'})
+      aBoolean = true;
 
       @Property({name: '*'})
       map: Record<string, any> = {};
@@ -65,7 +78,7 @@ describe('module: morph', function () {
       basic: MorphBasic = undefined as any;
     }
 
-    const srcValid = {title: 'valid', sourceName: 'valid sourceName'}
+    const srcValid = {title: 'valid', sourceName: 'valid sourceName', anEnum: 'e1', aNumber: 0, aBoolean: false}
     const getTransformer = () => getTransformerByGid(MorphBasic) as Morpher;
     const getComplexTransformer = () => getTransformerByGid(MorphComplex) as Morpher;
     const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
@@ -114,8 +127,42 @@ describe('module: morph', function () {
       }
     })
 
-    // @todo deserializes and fails @Property.required for (type=number, type=enum)
-    // @todo implement and test enum
+    it(`deserializes and fails @Property.type=number ('a')`, () => {
+      try {
+        getTransformer().deserialize({...srcValid, aNumber: 'a'})
+        throw new Error('expected error')
+      } catch (e) {
+        expect(e.fieldErrors.aNumber.message).toEqual('not a number: "a"')
+      }
+    })
+
+    it(`deserializes and fails @Property.type=boolean ('a')`, () => {
+      try {
+        getTransformer().deserialize({...srcValid, aBoolean: 'a'})
+        throw new Error('expected error')
+      } catch (e) {
+        expect(e.fieldErrors.aBoolean.message).toEqual('not a boolean: "a"')
+      }
+    })
+
+    it(`deserializes and fails @Property.type=string (true)`, () => {
+      try {
+        getTransformer().deserialize({...srcValid, validatedString: true})
+        throw new Error('expected error')
+      } catch (e) {
+        expect(e.fieldErrors.validatedString.message).toEqual('not a string: true')
+      }
+    })
+
+    it(`deserializes and fails @Property.type=enum ('e')`, () => {
+      const t = getTransformer();
+      try {
+        const inst = t.deserialize({...srcValid, anEnum: 'e'});
+        throw new Error('expected error');
+      } catch (e) {
+        expect(e.fieldErrors.anEnum.message).toEqual('e does not match any enum values: [e1; f2]')
+      }
+    })
 
     it('deserializes/serializes complex value', () => {
       const src = {
@@ -123,7 +170,10 @@ describe('module: morph', function () {
         basic: {
           title: 'inner',
           validatedString: 'vs',
-          sourceName: 'basic'
+          sourceName: 'basic',
+          anEnum: 'f2',
+          aNumber: 5,
+          aBoolean: true
         }
       }
       const t = getComplexTransformer();

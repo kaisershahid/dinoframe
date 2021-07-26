@@ -49,6 +49,9 @@ export const Morph = (params: MorphParams = {}) => {
 
 export const Property = (params: Partial<PropertyParams> = {}) => {
   return (target: any, name: string) => {
+    if (params.type == 'enum' && (!params.enumValues || params.enumValues.length == 0)) {
+      throw new MorphError(`${target}: type set as 'enum' but enumValues is missing/empty`)
+    }
     builder.pushProperty(target, name, {name, ...params, propertyName: name}, 'Property');
   }
 }

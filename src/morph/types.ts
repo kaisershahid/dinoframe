@@ -70,7 +70,8 @@ export type PropertyParams = {
    * Requires key to be present and not empty based on type:
    */
   required?: boolean;
-  type?: 'boolean' | 'string' | 'number' | 'enum' | Function
+  type?: 'boolean' | 'string' | 'number' | 'enum' | Function;
+  enumValues?: any[];
 }
 
 export type MethodParams = {

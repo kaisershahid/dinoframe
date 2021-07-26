@@ -1,4 +1,10 @@
-import {DecoratedMorphClass, MorphError, ObjectError, TransformerPropertyDef} from "./types";
+import {
+  DecoratedMorphClass,
+  FieldError,
+  MorphError,
+  ObjectError,
+  TransformerPropertyDef
+} from "./types";
 import {getMorphDefByGid, getTransformerByGid} from "./decorators";
 import cloneDeep from 'lodash.clonedeep';
 
@@ -40,8 +46,8 @@ export class Morpher {
 
   private initProperties() {
     for (const propertyName in this.originalMeta.properties) {
-      const {name, validator} = this.originalMeta.properties[propertyName][0];
-      this.updateProperty(name, {propertyName, validator});
+      const {name, validator, type, enumValues} = this.originalMeta.properties[propertyName][0];
+      this.updateProperty(name, {propertyName, validator, type, enumValues});
     }
   }
 
@@ -89,10 +95,14 @@ export class Morpher {
       return;
     }
 
-    // @todo cast to type if defined
-
     if (typeof def.type == 'function') {
       val = this.deserializeNested(val, def.type as typeof Function);
+    } else {
+      try {
+        ValueFactory.validateValue(val, def);
+      } catch (e) {
+        errors[name] = e
+      }
     }
 
     if (def.setter) {
@@ -119,7 +129,6 @@ export class Morpher {
 
       inst[def.propertyName] = val;
     }
-    // we currently don't throw for missing setter since this may happen with polymorph
   }
 
   doDeserialize<T extends any = any>(inst: any, source: any): T {
@@ -250,6 +259,33 @@ export class Morpher {
     } else {
       // @todo pojoSerialize?
       return null;
+    }
+  }
+}
+
+export class ValueFactory {
+  static validateValue(val: any, def: TransformerPropertyDef) {
+    switch (def.type) {
+      case 'boolean':
+        if (typeof val != 'boolean') {
+          throw new FieldError(`not a boolean: ${JSON.stringify(val)}`);
+        }
+        break;
+      case 'string':
+        if (typeof val != 'string') {
+          throw new FieldError(`not a string: ${JSON.stringify(val)}`)
+        }
+        break;
+      case 'number':
+        if (typeof val != 'number') {
+          throw new FieldError(`not a number: ${JSON.stringify(val)}`)
+        }
+        break;
+      case "enum":
+        if (!def.enumValues?.includes(val)) {
+          throw new FieldError(`${val} does not match any enum values: [${def.enumValues?.join('; ')}]`);
+        }
+        break;
     }
   }
 }
