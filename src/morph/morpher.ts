@@ -23,6 +23,7 @@ export class Morpher {
   discriminatorCol = '';
   subclasses: Record<string, typeof Function> = {};
   ignoreProps: string[] = [];
+  finalize?: string;
 
   constructor(decoratedMeta: DecoratedMorphClass) {
     this.originalMeta = decoratedMeta;
@@ -54,7 +55,11 @@ export class Morpher {
   private initMethods() {
     for (const method of Object.values(this.originalMeta.methods)) {
       const def = method.metadata[0];
-      this.updateProperty(def.name, def);
+      if (def.finalize) {
+        this.finalize = def.finalize;
+      } else {
+        this.updateProperty(def.name, def);
+      }
     }
   }
 
@@ -164,7 +169,9 @@ export class Morpher {
       throw new ObjectError(this.clazz.name, errors);
     }
 
-    // @todo @Validate if exists
+    if (this.finalize) {
+      inst[this.finalize]();
+    }
 
     return inst;
   }

@@ -74,9 +74,9 @@ export const PropertyGet = (name: string) => {
  * `ObjectError`
  * @todo
  */
-export const Validate = () => {
-  return (target: any, name: string, desc: PropertyDescriptor) => {
-
+export const Finalize = () => {
+  return (target: any, methodName: string, desc: PropertyDescriptor) => {
+    builder.pushMethod(target, methodName, {finalize: methodName}, 'Validate')
   }
 }
 

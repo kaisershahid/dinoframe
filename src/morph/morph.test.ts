@@ -3,7 +3,7 @@ import {
   Property,
   PropertySet,
   PropertyGet,
-  Validate,
+  Finalize,
   getMorphDefinitions, getMorphTransformers, getTransformerByGid
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
@@ -59,7 +59,7 @@ describe('module: morph', function () {
         return this.name;
       }
 
-      @Validate()
+      @Finalize()
       postDeserialize() {
         if (!this.title) {
           throw new ObjectError('MorphTest', {title: 'cannot be empty'})
@@ -94,6 +94,15 @@ describe('module: morph', function () {
       expect(inst).toEqual({...srcValid, validatedString: 'not empty'});
     })
 
+    it.only('deserializes and fails @Finalize', () => {
+      try {
+        getTransformer().deserialize({...srcValid, title: ''});
+        throw new Error('expected error')
+      } catch (err) {
+        expect(err.message).toEqual('One or more errors for: MorphTest');
+        expect(err.fieldErrors.title).toEqual('cannot be empty')
+      }
+    })
     it('deserializes and fails @Property.required (key absent)', () => {
       try {
         getTransformer().deserialize({});

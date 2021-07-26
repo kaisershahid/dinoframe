@@ -78,6 +78,7 @@ export type MethodParams = {
   name: string;
   setter?: string;
   getter?: string;
+  finalize?: string;
 }
 
 export type TransformerPropertyDef = PropertyParams & MethodParams;
