@@ -20,7 +20,9 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
   discriminatorCol = '';
   subclasses: Record<string, typeof Function> = {};
   ignoreProps: string[] = [];
-  finalize?: string;
+  finalizeMethod?: string;
+  serializeMethod?: string;
+  deserializeMethod?: string;
 
   constructor(decoratedMeta: DecoratedMorphClass, manager: Manager) {
     this.manager = manager;
@@ -65,7 +67,11 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
     for (const method of Object.values(this.originalMeta.methods)) {
       const def = method.metadata[0];
       if (def.finalize) {
-        this.finalize = def.finalize;
+        this.finalizeMethod = def.finalize;
+      } else if (def.serialize) {
+        this.serializeMethod = def.serialize;
+      } else if (def.deserialize) {
+        this.deserializeMethod = def.deserialize;
       } else {
         this.updateProperty(def.name, def);
       }
@@ -181,8 +187,8 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
       throw new ObjectError(this.clazz.name, errors);
     }
 
-    if (this.finalize) {
-      inst[this.finalize]();
+    if (this.finalizeMethod) {
+      inst[this.finalizeMethod]();
     }
 
     return inst;
@@ -210,6 +216,11 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
 
   deserialize<T extends any = any>(source: any): T {
     const [inst, subclass] = this.makeInstance(source) as [T, any];
+
+    if (this.deserializeMethod) {
+      inst[this.deserializeMethod](source, this.manager);
+      return inst;
+    }
 
     if (this.baseClass) {
       this.deserializeAncestors(inst, source);
@@ -280,6 +291,10 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
 
   serialize(source: any): any {
     const map: any = {};
+
+    if (this.serializeMethod) {
+      return source[this.serializeMethod](this.manager)
+    }
 
     if (this.baseClass) {
       this.serializeAncestors(map, source);

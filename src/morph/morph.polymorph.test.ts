@@ -7,6 +7,9 @@ import {
 } from "./decorators";
 import {MorphMarshaller} from "./index";
 
+/**
+ * Validates `@Morph`
+ */
 describe('module: morph', () => {
   describe('MorphMarshaller inheritance', () => {
     @Morph({ignoreProps: ['propAExclude']})
@@ -132,7 +135,7 @@ describe('module: morph', () => {
       });
     })
 
-    it('fails deserializing unsupport discrinator value', () => {
+    it('fails deserializing unsupported discrinator value', () => {
       try {
         const inst = t.deserialize({})
       } catch (err) {

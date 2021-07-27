@@ -78,29 +78,25 @@ export const PropertyGet = (name: string) => {
  * Method -- if defined, the method is invoked after deserialization to allow any necessary cleanup
  * steps and also do more complex validation. If instance fails deserialization, should throw
  * `ObjectError`
- * @todo
  */
-export const Finalize = () => {
-  return (target: any, methodName: string, desc: PropertyDescriptor) => {
-    builder.pushMethod(target, methodName, {finalize: methodName}, 'Validate')
-  }
+export const Finalize = (target: any, methodName: string, desc: PropertyDescriptor) => {
+  builder.pushMethod(target, methodName, {finalize: methodName}, 'Finalize')
 }
 
 /**
- * Method -- if defined, defers all serialization to this method.
- * @todo
+ * Method -- if defined, defers all serialization to this method and should have the signature
+ * `(morphManager?: MorpherManager<any>)`.
  */
-export const Serialize = () => {
-  throw new Error('not implemented');
+export const Serialize = (target: any, methodName: string, desc: PropertyDescriptor) => {
+  builder.pushMethod(target, methodName, {serialize: methodName}, 'Serialize')
 }
 
 /**
  * Method -- if defined, defers all deserialization to this method and should have the signature
- * `(source: any)`.
- * @todo
+ * `(source: any, morphManager?: MorpherManager<any>)`.
  */
-export const Deserialize = () => {
-  throw new Error('not implemented');
+export const Deserialize = (target: any, methodName: string, desc: PropertyDescriptor) => {
+  builder.pushMethod(target, methodName, {deserialize: methodName}, 'Deserialize')
 }
 
 export const getMorpherDefinitions = (): DecoratedMorphClass[] => {

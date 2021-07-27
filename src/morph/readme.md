@@ -157,3 +157,14 @@ As an example, let's say we have `Person extends Animal (extends Organism)`. Whe
 - if child definition exists, deserialize child definition and merge into parent
 
 What this basically means is if a parent ignores a property, the child can redefine and produce it, allowing deeper classes full control of final output if desired.
+
+## Manual Serialization and Deserialization
+
+If for some reason all the other decorators don't fully fit your needs in some cases, you can hijack the serialization/deserialization with `@Serialize` and `@Deserialize`. The expected method signatures are as follows:
+
+|Decorator     | Method
+|---           |---
+|`@Serialize`  |`(morphManager?: MorpherManager<any>)`
+|`@Deserialize`|`(source: any, morphManager?: MorpherManager<any>)`
+
+The morphManager is given as a convenience so that you can selectively use the correct serialization/deserialization context that kicked off processing of the given source object.

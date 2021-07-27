@@ -4,12 +4,14 @@ import {
   PropertySet,
   PropertyGet,
   Finalize,
-  getMorpherById,
+  getMorpherById, Serialize, Deserialize,
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
 import {MorphMarshaller, ValueFactory} from "./index";
 
-
+/**
+ * Validates `@Property`, `@PropertyGet`, `@PropertySet`, and `@Finalize`
+ */
 describe('module: morph', function () {
   describe('MorphMarshaller (against MorphBasic & MorphComplex)', () => {
     @Morph()
@@ -59,7 +61,7 @@ describe('module: morph', function () {
         return this.name;
       }
 
-      @Finalize()
+      @Finalize
       postDeserialize() {
         if (!this.title) {
           throw new ObjectError('MorphBasic', {title: 'cannot be empty'})
@@ -237,6 +239,51 @@ describe('module: morph', function () {
       expect(m?.serialize(inst)).toEqual(src)
     })
   })
+
+  describe('MorphMarshaller (manual serialization/deserialization)', () => {
+    @Morph()
+    class MorphManual {
+      map: any = {};
+
+      get(key: string) {
+        return this.map[key];
+      }
+
+      @Deserialize
+      deserialize(source: any) {
+        if (source.error) {
+          throw new ObjectError('failed', source);
+        }
+        this.map = {...source};
+      }
+
+      @Serialize
+      serialize() {
+        return this.map;
+      }
+    }
+
+    const m = getMorpherById(MorphManual);
+    const src = {a: 1, b: 2}
+    it('uses @Deserialize', () => {
+      const inst = m?.deserialize<MorphManual>(src);
+      expect(inst?.get('a')).toEqual(1);
+      expect(inst?.get('b')).toEqual(2);
+    })
+
+    it('uses @Serialize', () => {
+      const inst = m?.deserialize<MorphManual>(src);
+      expect(m?.serialize(inst)).toEqual(src);
+    })
+
+    it('propagates ObjectError on failed @Deserialize', () => {
+      try {
+        const inst = m?.deserialize<MorphManual>({...src, error: true});
+      } catch (e) {
+        expect(e.fieldErrors).toEqual({...src, error:true});
+      }
+    })
+  });
 
   describe('ValueFactory', () => {
     const getMessage = (val: any, def: any) => {
