@@ -132,3 +132,14 @@ export type DecoratedMorphClass = DecoratedClass<MorphParams, MethodParams, Prop
 export const getMorphDecoratorBuilder = () => {
   return new DecoratedClassBuilder(MORPH_PROVIDER);
 }
+
+export interface Morpher {
+  deserialize<T extends any = any>(source: any): T;
+  serialize<T extends any = any>(source: any): Record<string, any>;
+}
+
+export interface MorpherManager<MorpherType extends Morpher> {
+  deserializeTo<T extends any = any>(source: any, clazz: any): T;
+  serializeFrom<T extends any = any>(source: any): Record<string, any>;
+  getByClassOrId(clazzOrId: any): MorpherType|undefined;
+}

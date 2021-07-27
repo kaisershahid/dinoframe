@@ -1,13 +1,14 @@
 import {
+  DecoratedMorphClass,
   getMorphDecoratorBuilder,
+  MorpherManager,
   MorphError,
   MorphParams,
-  ObjectError,
   PropertyParams
 } from "./types";
-import {Morpher} from "./index";
-import {getGid, swapConstructorWithSubclass} from "../decorator/registry";
-import {type} from "os";
+import {BasicMorpherManager, MorphMarshaller} from "./index";
+import {getGid} from "../decorator/registry";
+import cloneDeep from 'lodash.clonedeep';
 
 const builder = getMorphDecoratorBuilder();
 
@@ -102,13 +103,8 @@ export const Deserialize = () => {
   throw new Error('not implemented');
 }
 
-export const getMorpherDefinitions = () => {
-  // @todo deep copy
-  return builder.getFinalized();
-}
-
-export const getMorphers = () => {
-  return getMorpherDefinitions().map(r => new Morpher(r))
+export const getMorpherDefinitions = (): DecoratedMorphClass[] => {
+  return builder.getFinalized().map(cloneDeep);
 }
 
 export const getMorpherDefByGid = (clazzOrGid: any) => {
@@ -116,10 +112,20 @@ export const getMorpherDefByGid = (clazzOrGid: any) => {
     return;
   }
   const gid = typeof clazzOrGid == 'string' ? clazzOrGid : getGid(clazzOrGid);
-  return builder.getByGid(gid);
+  return cloneDeep(builder.getByGid(gid));
+}
+
+let morphManager: MorpherManager<MorphMarshaller> = null as any;
+let builderChangeTicks = 0;
+
+export const getMorphManager = () => {
+  if (!morphManager || builder.getChangeTicks() > builderChangeTicks) {
+    builderChangeTicks = builder.getChangeTicks();
+    morphManager = new BasicMorpherManager(getMorpherDefinitions());
+  }
+  return morphManager;
 }
 
 export const getMorpherById = (clazzOrGid: any) => {
-  const meta = getMorpherDefByGid(clazzOrGid);
-  return meta ? new Morpher(meta) : undefined;
+  return getMorphManager().getByClassOrId(clazzOrGid);
 }

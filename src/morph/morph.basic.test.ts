@@ -4,14 +4,14 @@ import {
   PropertySet,
   PropertyGet,
   Finalize,
-  getMorpherDefinitions, getMorphers, getMorpherById
+  getMorpherById,
 } from "./decorators";
 import {FieldError, ObjectError} from "./types";
-import {Morpher, ValueFactory} from "./index";
+import {MorphMarshaller, ValueFactory} from "./index";
 
 
 describe('module: morph', function () {
-  describe('Morpher (against MorphBasic & MorphComplex)', () => {
+  describe('MorphMarshaller (against MorphBasic & MorphComplex)', () => {
     @Morph()
     class MorphBasic {
       @Property({required: true})
@@ -96,8 +96,8 @@ describe('module: morph', function () {
       aNumber: 0,
       aBoolean: false
     }
-    const getTransformer = () => getMorpherById(MorphBasic) as Morpher;
-    const getComplexTransformer = () => getMorpherById(MorphComplex) as Morpher;
+    const getTransformer = () => getMorpherById(MorphBasic) as MorphMarshaller;
+    const getComplexTransformer = () => getMorpherById(MorphComplex) as MorphMarshaller;
     const morphTestInst = getTransformer().deserialize<MorphBasic>(srcValid);
 
     it('deserializes with @Property', () => {

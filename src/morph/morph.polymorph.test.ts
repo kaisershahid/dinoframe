@@ -1,8 +1,14 @@
-import {getMorpherById, Morph, Property, PropertyGet, PropertySet} from "./decorators";
-import {Morpher} from "./index";
+import {
+  getMorpherById,
+  Morph,
+  Property,
+  PropertyGet,
+  PropertySet,
+} from "./decorators";
+import {MorphMarshaller} from "./index";
 
 describe('module: morph', () => {
-  describe('Morpher inheritance', () => {
+  describe('MorphMarshaller inheritance', () => {
     @Morph({ignoreProps: ['propAExclude']})
     class A {
       @Property() propA = '';
@@ -22,7 +28,7 @@ describe('module: morph', () => {
     }
 
     const srcValid = {propA: 'a1', propB: 'b2', propC: 'c3'};
-    const morpher: Morpher = getMorpherById(C) as any;
+    const morpher: MorphMarshaller = getMorpherById(C) as any;
 
     it('properly applies ancestor decorators on deserialization', () => {
       const inst = morpher.deserialize<C>(srcValid);
@@ -40,7 +46,7 @@ describe('module: morph', () => {
     })
   })
 
-  describe('Morpher polymorphic subclassing (agaist MorphPoly)', () => {
+  describe('MorphMarshaller polymorphic subclassing (agaist MorphPoly)', () => {
     /**
      * Defines default structure
      */
@@ -100,7 +106,8 @@ describe('module: morph', () => {
 
     const srcA = {name: 'instA', type: 'typeA'};
     const srcB = {name: 'instB', type: 'typeB'};
-    const t = getMorpherById(MorphPoly) as Morpher;
+    // refreshMorphManager();
+    const t = getMorpherById(MorphPoly) as MorphMarshaller;
 
     it('deserializes to appropriate subclasses', () => {
       const instA = t.deserialize<MorphPolyA>(srcA);

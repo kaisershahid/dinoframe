@@ -1,27 +1,29 @@
 import {
   DecoratedMorphClass,
   FieldError,
+  Morpher, MorpherManager,
   MorphError,
   ObjectError,
   TransformerPropertyDef
 } from "./types";
-import {getMorpherDefByGid, getMorpherById} from "./decorators";
-import cloneDeep from 'lodash.clonedeep';
-import {type} from "os";
+import {getGid} from "../decorator/registry";
 
 export const NAME_CATCH_ALL = '*';
 
-export class Morpher {
+export class MorphMarshaller<Manager extends MorpherManager<any> = any> implements Morpher {
+  private manager: Manager;
   private clazz: any;
   private baseClass: any;
   private originalMeta: DecoratedMorphClass;
+
   propertyDefs: Record<string, TransformerPropertyDef> = {};
   discriminatorCol = '';
   subclasses: Record<string, typeof Function> = {};
   ignoreProps: string[] = [];
   finalize?: string;
 
-  constructor(decoratedMeta: DecoratedMorphClass) {
+  constructor(decoratedMeta: DecoratedMorphClass, manager: Manager) {
+    this.manager = manager;
     this.originalMeta = decoratedMeta;
     this.clazz = decoratedMeta.clazz;
 
@@ -37,6 +39,10 @@ export class Morpher {
       this.subclasses = {...this.clazz.___discriminatorMap};
     }
     this.init();
+  }
+
+  getGid() {
+    return this.originalMeta.gid;
   }
 
   private init() {
@@ -182,12 +188,12 @@ export class Morpher {
     return inst;
   }
 
-  getAncestorStack(): Morpher[] {
-    const mstack: Morpher[] = [this];
-    let t = getMorpherById(this.baseClass);
+  getAncestorStack(): MorphMarshaller<Manager>[] {
+    const mstack: MorphMarshaller<Manager>[] = [this];
+    let t = this.manager.getByClassOrId(this.baseClass);
     while (t) {
       mstack.unshift(t);
-      t = getMorpherById(t.baseClass);
+      t = this.manager.getByClassOrId(t.baseClass);
     }
     return mstack;
   }
@@ -213,7 +219,7 @@ export class Morpher {
 
     if (subclass) {
       // continue populating using subclass rules
-      const subtransformer = getMorpherById(subclass);
+      const subtransformer = this.manager.getByClassOrId(subclass);
       subtransformer?.doDeserialize(inst, source);
     }
 
@@ -301,7 +307,7 @@ export class Morpher {
   }
 
   private deserializeNested(val: any, clazz: typeof Function) {
-    const transformer = getMorpherById(clazz);
+    const transformer = this.manager.getByClassOrId(clazz);
     if (transformer) {
       return transformer.deserialize(val);
     } else {
@@ -311,7 +317,7 @@ export class Morpher {
   }
 
   private serializeNested(val: any, clazz: typeof Function) {
-    const transformer = getMorpherById(clazz);
+    const transformer = this.manager.getByClassOrId(clazz);
     if (transformer) {
       return transformer.serialize(val);
     } else {
@@ -374,5 +380,41 @@ export class ValueFactory {
         }
         break;
     }
+  }
+}
+
+export class BasicMorpherManager implements MorpherManager<MorphMarshaller> {
+  private morphers: Record<string, MorphMarshaller<any>> = {};
+
+  constructor(morphMeta: DecoratedMorphClass[] = []) {
+    for (const m of morphMeta) {
+      this.morphers[m.gid] = new MorphMarshaller<any>(m, this);
+    }
+  }
+
+  getByClassOrId(clazzOrId: any): MorphMarshaller<BasicMorpherManager> | undefined {
+    if (!clazzOrId) {
+      return;
+    }
+    const gid = typeof clazzOrId == 'string' ? clazzOrId : getGid(clazzOrId);
+    return this.morphers[gid];
+  }
+
+  deserializeTo<T extends any = any>(source: any, clazz: any): T {
+    const m = this.getByClassOrId(clazz);
+    if (!m) {
+      throw new MorphError(`deserialize: no morpher for ${clazz.name}`);
+    }
+
+    return m.deserialize(source);
+  }
+
+  serializeFrom<T extends any = any>(source: any): Record<string, any> {
+    const m = this.getByClassOrId(Object.getPrototypeOf(source));
+    if (!m) {
+      throw new MorphError(`serialize: no morpher for ${source}`);
+    }
+
+    return m.serialize(source);
   }
 }

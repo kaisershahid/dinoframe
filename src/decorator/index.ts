@@ -225,13 +225,19 @@ export class DecoratedClassBuilder<Clazz extends object = any,
   private finalized: DecoratedClass[] = [];
   private map: Record<string, DecoratedClass> = {};
   private provider: string;
+  private changeTicks = 0;
 
   constructor(provider: string) {
     this.provider = provider;
     decClassInstances.push(this);
   }
 
-  checkProto(proto: any) {
+  getChangeTicks() {
+    return this.changeTicks;
+  }
+
+  protected checkProto(proto: any) {
+    this.changeTicks++;
     const gid = getOrMakeGidForConstructor(proto);
     if (this.curGid != gid) {
       this.cur = getEmptyDecoratedClass<Clazz, Method, Property, Parameter>(
