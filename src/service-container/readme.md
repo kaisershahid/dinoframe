@@ -2,7 +2,7 @@
 
 This module provides a set of decorators to:
 
-1. easily declare services 
+1. easily declare services
 2. easily declare dependencies (through method injection)
 3. intelligently manage activation/deactivation (eliminating )
 4. package related services through bundles
@@ -19,7 +19,7 @@ Services can be declared with **`@Service(id: string, opts?)`**. `opts` can have
 - **priority**: determines start order (desc priority)
 - **disabled**: if `true`, service is ignored
 - **injectConfig**: if `true` or a serviceId, injects the config service as the first and only constructor argument
-  - if `true`, the expected config service would be `config/${serviceId}`, otherwise, it's whatever string value is defined 
+  - if `true`, the expected config service would be `config/${serviceId}`, otherwise, it's whatever string value is defined
   - (yes, configurations are managed as services. that means you get a lot of control in how configs are managed, boilerplate-y as it may sound)
 - **interfaces**: a list of strings indicating the interfaces this service conforms to and can be referenced as
 - **isFactory**: if `true`, service acts as a proxy to sub-services identified through `subId@serviceId`. Will be discussed further later
@@ -29,8 +29,7 @@ Services can be declared with **`@Service(id: string, opts?)`**. `opts` can have
   priority: 100,
   injectConfig: true,
 })
-export class HttpController {
-}
+export class HttpController {}
 ```
 
 ### Interfaces
@@ -54,13 +53,16 @@ The behavior of injection is determined as follows:
 @Service("controller")
 export class HttpController {
   // direct reference
-  setDb(@Inject({id: "db"}) db) {
+  setDb(@Inject({ id: "db" }) db) {
     this.db = db;
   }
 
   // indirect reference. using min=0 so that controller will always start
   // if no routers are available
-  setRouters(@Inject({matchInterface: "http.router", matchCriteria: {min: 0}}) routers) {
+  setRouters(
+    @Inject({ matchInterface: "http.router", matchCriteria: { min: 0 } })
+    routers
+  ) {
     this.routers = routers;
   }
 }
@@ -92,7 +94,7 @@ Both methods can be asynchronous.
 
 ## Service lifecycle management
 
-The full power of the service container lies in putting service, injection, and activation/deactivation declarations together to completely take over application initialization. This saves a tremendous amount of effort in writing/managing the boilerplate associated with adding new services to your app. 
+The full power of the service container lies in putting service, injection, and activation/deactivation declarations together to completely take over application initialization. This saves a tremendous amount of effort in writing/managing the boilerplate associated with adding new services to your app.
 
 As the developer, you can provide an optional starting priority, otherwise, the container take cares of everything else:
 
@@ -166,11 +168,11 @@ That's it! Use your imagination to see how you can exploit this.
 
 ### Dependency Resolution/Activation
 
-Because of the unknown cardinality and dynamic nature of sub-services, a direct dependency on `subId@serviceId` is translated into `serviceId` -- once `serviceId` is available, the container will do an injection-time resolve on `subId`. If the factory does not support `subId`, an exception will be thrown and service will fail to become available. 
+Because of the unknown cardinality and dynamic nature of sub-services, a direct dependency on `subId@serviceId` is translated into `serviceId` -- once `serviceId` is available, the container will do an injection-time resolve on `subId`. If the factory does not support `subId`, an exception will be thrown and service will fail to become available.
 
 ## Bundles
 
-Services can be logically grouped together by associating it with a bundle. This makes it easy to share your services with others, isolate test services, and allow development of services for different environments. 
+Services can be logically grouped together by associating it with a bundle. This makes it easy to share your services with others, isolate test services, and allow development of services for different environments.
 
 > A bundle decorator is returned from `BundleDecoratorFactory`, and service metadata can be retrieved using `getBundleMetadata(bundleId: string)`.
 
@@ -181,18 +183,26 @@ Services can be logically grouped together by associating it with a bundle. This
 The following example shows how to define services, associate them with a bundle, and selectively register and start those bundles in the container.
 
 ```typescript
-import {Service, Activate, Deactivate, Inject, Factory, ServiceFactory} from "./decorators";
-import {BundleDecoratorFactory, getBundledMetadata, ServiceContainer} from "./index";
+import {
+  Service,
+  Activate,
+  Deactivate,
+  Inject,
+  Factory,
+  ServiceFactory,
+} from "./decorators";
+import {
+  BundleDecoratorFactory,
+  getBundledMetadata,
+  ServiceContainer,
+} from "./index";
 
-const ExampleBundle = BundleDecoratorFactory('example');
+const ExampleBundle = BundleDecoratorFactory("example");
 
 @ExampleBundle
-@Service('exampleService', {
+@Service("exampleService", {
   // optional; interfaces exposed by service (1:many) -- provides simple IoC.
-  interfaces: [
-    'codec.mp4',
-    'codec.mpg'
-  ],
+  interfaces: ["codec.mp4", "codec.mpg"],
   // optional; if true, ignored by service container and will block dependents
   disabled: false,
 })
@@ -204,13 +214,13 @@ class ExampleService {
   }
 
   @Factory()
-  static makeInstance(@Inject('depId') depSvc: any) {
+  static makeInstance(@Inject("depId") depSvc: any) {
     return new ExampleService(depSvc);
   }
 
   // sets the service identified by 'anotherDepId' once that service
   // has completed its activation
-  setAnotherDepSvc(@Inject({id:'anotherDepId'}) svc: any) {
+  setAnotherDepSvc(@Inject({ id: "anotherDepId" }) svc: any) {
     this.anotherDepSvc = svc;
   }
 
@@ -243,7 +253,7 @@ export class Logger {}
 
 @ExampleBundle
 @Service("logger.factory", {
-  isFactory: true
+  isFactory: true,
 })
 class ExampleLoggerFactory {
   private cache: Record<string, any> = {};
@@ -253,19 +263,19 @@ class ExampleLoggerFactory {
       this.cache[id] = new Logger();
     }
 
-    return this.cache[id]
+    return this.cache[id];
   }
-  
+
   has(id: string) {
     return true;
   }
 }
 
 // the convenience function flattenManyBundlesMetadata() expects a list of bundle ids and returns all the services associated with them
-const container = new ServiceContainer(flattenManyBundlesMetadata(['example']))
+const container = new ServiceContainer(flattenManyBundlesMetadata(["example"]));
 container.startup().then(() => {
-  console.log('container started up!');
-})
+  console.log("container started up!");
+});
 ```
 
 ## Todos

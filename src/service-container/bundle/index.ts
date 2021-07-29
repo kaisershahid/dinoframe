@@ -1,10 +1,11 @@
-import {BaseServiceMeta, ServiceMeta} from "../types";
-import {DecoratedClass, getBundledMetadata} from "../../decorator";
-import {DecoratedServiceRecord, makeConfigId} from "../utils";
+import { BaseServiceMeta, ServiceMeta } from "../types";
+import { DecoratedClass, getBundledMetadata } from "../../decorator";
+import { DecoratedServiceRecord, makeConfigId } from "../utils";
 import {
   CONFIG_PROVIDER_SUFFIX,
-  ID_RUNTIME, RuntimeConfigProvider,
-  StandardConfig
+  ID_RUNTIME,
+  RuntimeConfigProvider,
+  StandardConfig,
 } from "../common/runtime";
 
 export type BundleConfigService = {
@@ -14,14 +15,14 @@ export type BundleConfigService = {
   idPrefix?: string;
   disabled?: boolean;
   meta?: Partial<BaseServiceMeta>;
-  config?: Record<string, any>
-}
+  config?: Record<string, any>;
+};
 
 export type BundleConfig = {
   bundleDependencies?: string[];
   moduleDependencies?: string[];
   services: BundleConfigService[];
-}
+};
 
 export class BundleActivator {
   private id: string;
@@ -36,7 +37,7 @@ export class BundleActivator {
     const bundleDeps = this.config.bundleDependencies ?? [];
     const modDeps = this.config.moduleDependencies ?? [];
     for (let modDep of modDeps) {
-      const [mod, clazz] = modDep.split(':');
+      const [mod, clazz] = modDep.split(":");
       // @todo log:debug
       let imp = require(mod);
       if (clazz) {
@@ -49,7 +50,10 @@ export class BundleActivator {
     return bundleDeps;
   }
 
-  processServiceRecords(bundleRecs: DecoratedServiceRecord[], serviceMap: Record<string, DecoratedServiceRecord[]>): DecoratedServiceRecord[] {
+  processServiceRecords(
+    bundleRecs: DecoratedServiceRecord[],
+    serviceMap: Record<string, DecoratedServiceRecord[]>
+  ): DecoratedServiceRecord[] {
     // index configs by service id
     const configMap: Record<string, BundleConfigService> = {};
     for (const svcCfg of this.config.services) {
@@ -75,7 +79,10 @@ export class BundleActivator {
         let injectConfig: undefined | string;
         if (config) {
           injectConfig = makeConfigId(rec.id);
-          config = {...(rec.originalMeta.metadata[0].config ?? {}), ...config};
+          config = {
+            ...(rec.originalMeta.metadata[0].config ?? {}),
+            ...config,
+          };
         }
 
         overrides.injectConfig = injectConfig;
@@ -85,7 +92,7 @@ export class BundleActivator {
           gid: rec.gid,
           ...overrides,
           config: conf.config,
-          disabled: conf.disabled
+          disabled: conf.disabled,
         });
       }
     }
@@ -103,7 +110,10 @@ export class BundleActivator {
         let injectConfig: undefined | string;
         if (config) {
           injectConfig = makeConfigId(svcId);
-          config = {...(recsById[conf.id].originalMeta.metadata[0].config ?? {}), ...config};
+          config = {
+            ...(recsById[conf.id].originalMeta.metadata[0].config ?? {}),
+            ...config,
+          };
         }
 
         overrides.injectConfig = injectConfig;
@@ -112,10 +122,10 @@ export class BundleActivator {
         // @todo clone with clazz, and pass to cloneAndRegisterNewService()
         recsById[svcId] = recsById[conf.id].cloneAndRegisterNewService(svcId, {
           id: svcId,
-          gid: '',
+          gid: "",
           ...overrides,
           config,
-          disabled: conf.disabled
+          disabled: conf.disabled,
         });
       }
     }

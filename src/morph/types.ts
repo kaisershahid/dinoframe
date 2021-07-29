@@ -1,6 +1,6 @@
-import {DecoratedClass, DecoratedClassBuilder} from "../decorator";
+import { DecoratedClass, DecoratedClassBuilder } from "../decorator";
 
-export const MORPH_PROVIDER = 'dinoframe.morph';
+export const MORPH_PROVIDER = "dinoframe.morph";
 
 export class MorphError extends Error {
   constructor(message: string) {
@@ -28,7 +28,10 @@ export type ValidatorErrorMap = {
   [key: string]: any;
 };
 
-export type ValidatorFn = (value: any, name: string) => ValidatorErrorMap | undefined;
+export type ValidatorFn = (
+  value: any,
+  name: string
+) => ValidatorErrorMap | undefined;
 
 export type MorphParams = {
   /**
@@ -44,7 +47,7 @@ export type MorphParams = {
   inherits?: {
     baseClass?: any;
     discriminatorValue?: string;
-  }
+  };
   /**
    * If defined and not empty, omit specific properties from serialization.
    * This does not affect deserialization (i.e. you can mark a property to
@@ -58,7 +61,7 @@ export type MorphParams = {
    * value would be: {key1: 'childKey1', key2: 'parentVal'}.
    */
   ignoreProps?: string[];
-}
+};
 
 /**
  * For direct property setting, the following metadata can be specified to help
@@ -86,16 +89,16 @@ export type PropertyParams = {
    * value to the given class constructor.
    * @future 'object'
    */
-  type?: 'boolean' | 'string' | 'number' | 'enum' | Function;
+  type?: "boolean" | "string" | "number" | "enum" | Function;
   /**
    * If defined, either allows array or scalar ('mixed') or strictly array ('strict')
    */
-  listType?: 'mixed' | 'strict'
+  listType?: "mixed" | "strict";
   /**
    * For enum type, the list of allowed values.
    */
   enumValues?: any[];
-}
+};
 
 export type MethodParams = {
   /**
@@ -123,15 +126,19 @@ export type MethodParams = {
    * Defers all deserialization to method. Expects 1 argument (source value map).
    */
   deserialize?: string;
-}
+};
 
 export type TransformerPropertyDef = PropertyParams & MethodParams;
 
-export type DecoratedMorphClass = DecoratedClass<MorphParams, MethodParams, PropertyParams>;
+export type DecoratedMorphClass = DecoratedClass<
+  MorphParams,
+  MethodParams,
+  PropertyParams
+>;
 
 export const getMorphDecoratorBuilder = () => {
   return new DecoratedClassBuilder(MORPH_PROVIDER);
-}
+};
 
 export interface Morpher {
   deserialize<T extends any = any>(source: any): T;
@@ -141,5 +148,5 @@ export interface Morpher {
 export interface MorpherManager<MorpherType extends Morpher> {
   deserializeTo<T extends any = any>(source: any, clazz: any): T;
   serializeFrom<T extends any = any>(source: any): Record<string, any>;
-  getByClassOrId(clazzOrId: any): MorpherType|undefined;
+  getByClassOrId(clazzOrId: any): MorpherType | undefined;
 }

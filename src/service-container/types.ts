@@ -1,5 +1,5 @@
-import {DecoratedClass,} from "../decorator";
-import {DecoratedServiceRecord} from "./utils";
+import { DecoratedClass } from "../decorator";
+import { DecoratedServiceRecord } from "./utils";
 
 /**
  * These are the standard priorities used to organize startup. Note that priorities don't absolutely
@@ -109,9 +109,11 @@ export type DependencyMeta = {
   };
 };
 
-export type ClassServiceMetadata = DecoratedClass<ServiceMeta,
+export type ClassServiceMetadata = DecoratedClass<
+  ServiceMeta,
   MethodInvoker,
-  DependencyMeta>;
+  DependencyMeta
+>;
 
 export interface Container {
   /** Checks if a service has been registered. */
@@ -148,5 +150,4 @@ export interface Container {
 /**
  * A partial container interface implemented by @ServiceFactory instances.
  */
-export interface FactoryContainer extends Pick<Container, "has" | "resolve"> {
-}
+export interface FactoryContainer extends Pick<Container, "has" | "resolve"> {}

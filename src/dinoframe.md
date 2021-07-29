@@ -11,7 +11,7 @@ The JS engine will only process a class when a concrete reference is made to it 
 2. optionally return a bundle identifier
    - explained in [bundle](./service-container/bundle/readme.md) submodule
 
-This is only a suggestion, but we tend to prefer explicit entrypoints to avoid any confusion. 
+This is only a suggestion, but we tend to prefer explicit entrypoints to avoid any confusion.
 
 ## `decorator`
 
@@ -26,7 +26,7 @@ The `decorator` module changes that. It provides an easy way to:
 
 ## `service-container`, `http`
 
-Building on `decorator`, and inspired by [Apache Sling](https://sling.apache.org/), `service-container` makes it quick and simple to declare services and their 
- dependencies purely through decorators. Dependency management ensures no service starts up until all its dependencies are fulfilled, interfaces provide inversion-of-control, and flexible access pattern works seamlessly with your existing code.
+Building on `decorator`, and inspired by [Apache Sling](https://sling.apache.org/), `service-container` makes it quick and simple to declare services and their
+dependencies purely through decorators. Dependency management ensures no service starts up until all its dependencies are fulfilled, interfaces provide inversion-of-control, and flexible access pattern works seamlessly with your existing code.
 
 A companion to the container is `http`, which makes it easy to declare routes and middleware in an Express-friendly way while also supporting service container integration.

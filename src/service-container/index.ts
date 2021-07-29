@@ -4,10 +4,11 @@ import {
   Container,
   ServiceRecord,
   ServiceState,
-  FactoryContainer, InterfaceAvailableListener,
+  FactoryContainer,
+  InterfaceAvailableListener,
 } from "./types";
-import {Logger, LoggerFactory, LoggerLevel} from "./common/logging";
-import {DecoratedServiceRecord} from "./utils";
+import { Logger, LoggerFactory, LoggerLevel } from "./common/logging";
+import { DecoratedServiceRecord } from "./utils";
 
 export const PROVIDER_ID = "service-container";
 
@@ -20,10 +21,8 @@ export class ServiceTracker {
   depServices: Record<string, any> = {};
   depInterfaces: Record<string, any> = {};
   promise: Promise<string>;
-  resolve: (value?: PromiseLike<any> | any) => void = (v) => {
-  };
-  reject: (reason?: any) => void = (v) => {
-  };
+  resolve: (value?: PromiseLike<any> | any) => void = (v) => {};
+  reject: (reason?: any) => void = (v) => {};
 
   constructor(id: string) {
     this.id = id;
@@ -134,7 +133,7 @@ export class DependencyTracker {
     for (const waitId of Object.keys(this.waitingOnInterface[interfaze])) {
       const depMeta = this.waitingOnInterface[interfaze][waitId];
       const min = depMeta.matchCriteria?.min ?? 1;
-      console.log(`## ${interfaze}: ${waitId} -> ${min}`)
+      console.log(`## ${interfaze}: ${waitId} -> ${min}`);
       if (this.interfaceCount[interfaze] >= min) {
         delete this.waitingOnInterface[interfaze][waitId];
         delete this.serviceTrackers[waitId].depInterfaces[interfaze];
@@ -204,7 +203,7 @@ export class ServiceFactoryHelper implements FactoryContainer {
 
   private assertIsFactory(id: string) {
     if (!this.container.isFactory(id)) {
-      throw new Error(`${id}: not a factory`)
+      throw new Error(`${id}: not a factory`);
     }
   }
 }
@@ -219,7 +218,10 @@ export class ServiceContainer implements Container {
   private depTracker: DependencyTracker = new DependencyTracker();
   private factoryHelper: ServiceFactoryHelper;
   private logger: Logger;
-  private interfaceSubscribers: Record<string, Record<string, InterfaceAvailableListener>> = {};
+  private interfaceSubscribers: Record<
+    string,
+    Record<string, InterfaceAvailableListener>
+  > = {};
 
   constructor(initialRecords: DecoratedServiceRecord[] = []) {
     initialRecords.forEach((r) => this.register(r));
@@ -307,7 +309,7 @@ export class ServiceContainer implements Container {
     }
 
     const recs = Object.values(this.records).sort(
-      ({priority: p1}, {priority: p2}) => {
+      ({ priority: p1 }, { priority: p2 }) => {
         return p1 < p2 ? 1 : p1 > p2 ? -1 : 0;
       }
     );
@@ -318,25 +320,31 @@ export class ServiceContainer implements Container {
         continue;
       }
       promises.push(
-        this.initServiceFromRecord(rec).then((inst) => {
-          rec.status = ServiceState.activated;
-          this.logger.info(`! startup: ${rec.id} AVAILABLE`);
-          const notifyServices = this.depTracker.serviceAvailable(rec.id);
-          const interfaces: string[] = [];
-          const notifyInterfaces = rec.interfaces
-            .map((int) => {
-              interfaces.push(int);
-              return this.depTracker.interfaceAvailable(int);
-            })
-            .reduce((a, b) => a.concat(b), []);
+        this.initServiceFromRecord(rec)
+          .then((inst) => {
+            rec.status = ServiceState.activated;
+            this.logger.info(`! startup: ${rec.id} AVAILABLE`);
+            const notifyServices = this.depTracker.serviceAvailable(rec.id);
+            const interfaces: string[] = [];
+            const notifyInterfaces = rec.interfaces
+              .map((int) => {
+                interfaces.push(int);
+                return this.depTracker.interfaceAvailable(int);
+              })
+              .reduce((a, b) => a.concat(b), []);
 
-          this.registerInterfaceSubscriptions(rec.id, inst, rec.subscribeToInterfaces);
-          this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
-          console.log('🥁 ', rec.id, rec.interfaces) ;
-          this.notifyInterfacesAvailable(inst, notifyInterfaces);
-        }).catch((e) => {
-          this.logger.error(e);
-        })
+            this.registerInterfaceSubscriptions(
+              rec.id,
+              inst,
+              rec.subscribeToInterfaces
+            );
+            this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
+            console.log("🥁 ", rec.id, rec.interfaces);
+            this.notifyInterfacesAvailable(inst, notifyInterfaces);
+          })
+          .catch((e) => {
+            this.logger.error(e);
+          })
       );
     }
 
@@ -366,13 +374,14 @@ export class ServiceContainer implements Container {
   ) {
     const deps = Object.keys(rec.dependencies);
     this.logger.info(
-      `waitOnDependencies: ${rec.id} ->`, deps.length > 1 ? deps : 'NO_DEPS'
+      `waitOnDependencies: ${rec.id} ->`,
+      deps.length > 1 ? deps : "NO_DEPS"
     );
     for (const dep of deps) {
       if (dep.startsWith("#")) {
         const interfaze = dep.substring(1);
         const matchCriteria = rec.dependencies[dep];
-        this.depTracker.bindToInterface(interfaze, rec.id, {matchCriteria});
+        this.depTracker.bindToInterface(interfaze, rec.id, { matchCriteria });
       } else {
         // unlike a normal service ref, a factory service ref should only depend on the root factory
         // and not a specific sub-service -- this is because sub-services have unknown cardinality.
@@ -391,7 +400,11 @@ export class ServiceContainer implements Container {
     return st.promise;
   }
 
-  private registerInterfaceSubscriptions(svcId: string, inst: any, interfaces: string[]) {
+  private registerInterfaceSubscriptions(
+    svcId: string,
+    inst: any,
+    interfaces: string[]
+  ) {
     for (const _interface of interfaces) {
       if (!this.interfaceSubscribers[_interface]) {
         this.interfaceSubscribers[_interface] = {};
@@ -420,11 +433,17 @@ export class ServiceContainer implements Container {
       }
 
       for (const svcId in this.interfaceSubscribers[_interface]) {
-        console.log('<<<', svcId, _interface);
+        console.log("<<<", svcId, _interface);
         try {
-          this.interfaceSubscribers[_interface][svcId].onAvailableInterface(_interface, [inst])
+          this.interfaceSubscribers[_interface][svcId].onAvailableInterface(
+            _interface,
+            [inst]
+          );
         } catch (e) {
-          this.logger.error(`notifyInterfacesAvailable: ${_interface} -> ${svcId}`, e);
+          this.logger.error(
+            `notifyInterfacesAvailable: ${_interface} -> ${svcId}`,
+            e
+          );
         }
       }
     }
@@ -443,7 +462,10 @@ export class ServiceContainer implements Container {
       promises.push(
         this.deactivateService(rec, this.instances[rec.id])
           .catch((e) => {
-            this.logger.error(`failed to successfully deactivate: ${rec.id}`, e);
+            this.logger.error(
+              `failed to successfully deactivate: ${rec.id}`,
+              e
+            );
           })
           .finally(() => {
             delete this.instances[rec.id];
@@ -521,23 +543,27 @@ export class ServiceContainer implements Container {
   /**
    * Does static analysis on current service records to determine what dependencies are missing
    */
-  static analyzeDependencies(records: DecoratedServiceRecord[]): { id: string, status: string, unresolvedDeps: string[] }[] {
+  static analyzeDependencies(
+    records: DecoratedServiceRecord[]
+  ): { id: string; status: string; unresolvedDeps: string[] }[] {
     // for each service, report: id, status, dependencies not fulfilled
     const depTrack = new DependencyTracker();
     const recById: Record<string, number> = {};
 
     // fifo for serviceIds to check. build up with initial services, then for each set of services
     // to notify, add to queue
-    let recIds: string[] = Object.values(records).map((rec, idx) => {
-      if (rec.id) {
-        recById[rec.id] = idx;
-      }
-      return rec.id;
-    }).filter(id => id !== undefined);
+    let recIds: string[] = Object.values(records)
+      .map((rec, idx) => {
+        if (rec.id) {
+          recById[rec.id] = idx;
+        }
+        return rec.id;
+      })
+      .filter((id) => id !== undefined);
 
     while (recIds.length > 0) {
       const recId = recIds.shift() as string;
-      const rec = records[recById[recId]]
+      const rec = records[recById[recId]];
       // ensure we have an entry that we can report back on later
       depTrack.getTracker(recId);
       if (rec.isDisabled) {
@@ -552,7 +578,7 @@ export class ServiceContainer implements Container {
           continue;
         }
 
-        let [subId, factoryId] = dep.split('@');
+        let [subId, factoryId] = dep.split("@");
         let depId = factoryId ? factoryId : dep;
         if (!depTrack.serviceMap[depId]) {
           depTrack.waitOnService(depId, rec.id);
@@ -569,7 +595,7 @@ export class ServiceContainer implements Container {
         }
 
         // broadcast availability to dependents
-        const notified: Record<string, boolean> = {}
+        const notified: Record<string, boolean> = {};
         for (const dependentId of notify) {
           if (!notified[dependentId]) {
             notified[dependentId] = true;
@@ -588,8 +614,14 @@ export class ServiceContainer implements Container {
       const st = depTrack.serviceTrackers[recId];
       const rec: any = {
         id: recId,
-        status: records[recById[recId]].isDisabled ? 'DISABLED' : (st.isResolved() ? 'RESOLVED' : 'UNRESOLVED'),
-        unresolvedDeps: Object.keys(st.depServices).concat(Object.keys(st.depInterfaces).map(i => `#${i}`))
+        status: records[recById[recId]].isDisabled
+          ? "DISABLED"
+          : st.isResolved()
+          ? "RESOLVED"
+          : "UNRESOLVED",
+        unresolvedDeps: Object.keys(st.depServices).concat(
+          Object.keys(st.depInterfaces).map((i) => `#${i}`)
+        ),
       };
 
       status.push(rec);

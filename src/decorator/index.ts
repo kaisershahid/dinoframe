@@ -3,9 +3,9 @@
  * metadata for reflection.
  */
 
-import {getOrMakeGidForConstructor} from "./registry";
-import {DecoratedServiceRecord} from "../service-container/utils";
-import {ClassServiceMetadata} from "../service-container/types";
+import { getOrMakeGidForConstructor } from "./registry";
+import { DecoratedServiceRecord } from "../service-container/utils";
+import { ClassServiceMetadata } from "../service-container/types";
 
 export type DecoratedParameter = {
   method: string;
@@ -29,8 +29,10 @@ export type MetaDescriptor = {
   _decorator: string;
 };
 
-export type DecoratedMethod<Method extends any = any,
-  Parameter extends any = any> = {
+export type DecoratedMethod<
+  Method extends any = any,
+  Parameter extends any = any
+> = {
   metadata: (MetaDescriptor & Method)[];
   parameters: (MetaDescriptor & Parameter)[][];
 };
@@ -38,10 +40,12 @@ export type DecoratedMethod<Method extends any = any,
 /**
  * A convenient structure encapsulating all class decorations.
  */
-export type DecoratedClass<Clazz extends any = any,
+export type DecoratedClass<
+  Clazz extends any = any,
   Method extends any = any,
   Property extends any = any,
-  Parameter extends any = any> = MetaDescriptor & {
+  Parameter extends any = any
+> = MetaDescriptor & {
   gid: string;
   clazz: any;
   metadata: (MetaDescriptor & Clazz)[];
@@ -54,10 +58,12 @@ export type DecoratedClass<Clazz extends any = any,
 /**
  * Generates an empty structure with given gid.
  */
-export const getEmptyDecoratedClass = <Clazz extends object = any,
+export const getEmptyDecoratedClass = <
+  Clazz extends object = any,
   Method extends object = any,
   Parameter extends object = any,
-  Property extends object = any>(
+  Property extends object = any
+>(
   gid: string,
   provider: string
 ): DecoratedClass<Clazz, Method, Parameter, Property> => {
@@ -130,7 +136,9 @@ const addToGlobalRegistry = (gid: string, metadata: DecoratedClass) => {
   globalRegistry[gid].push(metadata);
 };
 
-export const getGlobalDecoratedClasses = (filter?: (rec: DecoratedClass) => boolean): DecoratedClass[] => {
+export const getGlobalDecoratedClasses = (
+  filter?: (rec: DecoratedClass) => boolean
+): DecoratedClass[] => {
   if (!filter) {
     filter = () => true;
   }
@@ -158,9 +166,9 @@ const addToBundleRegistry = (id: string, metadata: DecoratedClass) => {
 
 export const getBundledMetadata = (id: string): BundleEntry => {
   if (!bundleRegistry[id]) {
-    return {id, metadata: []};
+    return { id, metadata: [] };
   }
-  return {id, metadata: [...bundleRegistry[id]]};
+  return { id, metadata: [...bundleRegistry[id]] };
 };
 
 export const getGidsForBundle = (id: string): string[] => {
@@ -168,7 +176,7 @@ export const getGidsForBundle = (id: string): string[] => {
     return [];
   }
   return [...bundleRegistryGid[id]];
-}
+};
 
 export const getManyBundlesMetadata = (ids: string[]): BundleEntry[] => {
   return ids.map((id) => getBundledMetadata(id));
@@ -200,8 +208,7 @@ export const filterByDecorator = (metadata: any[], decorator: string) => {
   );
 };
 
-export const duplicateDecoratorsForGid = (gid: string, newGid: string,) => {}
-
+export const duplicateDecoratorsForGid = (gid: string, newGid: string) => {};
 
 /**
  * Iteratively construct a class tree of decorators for easy in-process and post-
@@ -212,15 +219,19 @@ export const duplicateDecoratorsForGid = (gid: string, newGid: string,) => {}
  * This also populates the global registry as well as bundle registry, which you
  * can access from the above exposed methods.
  */
-export class DecoratedClassBuilder<Clazz extends object = any,
+export class DecoratedClassBuilder<
+  Clazz extends object = any,
   Method extends object = any,
   Parameter extends object = any,
-  Property extends object = any> {
+  Property extends object = any
+> {
   curGid = "";
-  cur: DecoratedClass = getEmptyDecoratedClass<Clazz,
+  cur: DecoratedClass = getEmptyDecoratedClass<
+    Clazz,
     Method,
     Property,
-    Parameter>("", "");
+    Parameter
+  >("", "");
 
   private finalized: DecoratedClass[] = [];
   private map: Record<string, DecoratedClass> = {};

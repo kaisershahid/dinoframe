@@ -10,7 +10,7 @@ import { Request } from "express";
 import { Inject, Service } from "../../service-container/decorators";
 import { TrivialService } from "./services";
 import { Config } from "../../service-container/common/runtime";
-import {Logger} from "../../service-container/common/logging";
+import { Logger } from "../../service-container/common/logging";
 
 const ControllerBundle = BundleDecoratorFactory("example-app.controllers");
 

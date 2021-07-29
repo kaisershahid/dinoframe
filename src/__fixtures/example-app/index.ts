@@ -12,8 +12,8 @@
 import { Dinoframe } from "../../dinoframe";
 import { ExpressApp } from "../../http";
 import { UploadController } from "./http-controllers";
-import {ServiceContainer} from "../../service-container";
-import {DecoratedServiceRecord} from "../../service-container/utils";
+import { ServiceContainer } from "../../service-container";
+import { DecoratedServiceRecord } from "../../service-container/utils";
 
 /*
 CONVENTION: each bundle's entrypoint is either:
@@ -32,30 +32,32 @@ const dino = new Dinoframe([
   // a trivial service that the controller depends on
   require("./services").discover(),
   require("../../service-container/common/runtime").discover(),
-  require("../../service-container/common/logging").discover()
+  require("../../service-container/common/logging").discover(),
 ]);
 
 dino.addBundleConfig("example-app.services", {
   services: [
     {
-      id: 'duplicate',
-      runtimeId: 'newDuplicate',
+      id: "duplicate",
+      runtimeId: "newDuplicate",
       config: {
-        name: 'new deuplicate'
-      }
-    }
-  ]
-})
+        name: "new deuplicate",
+      },
+    },
+  ],
+});
 
-if (process.argv[2] == '--debug') {
+if (process.argv[2] == "--debug") {
   const status = ServiceContainer.analyzeDependencies(dino.activateBundles());
   for (const rec of status) {
-    if (rec.status == 'RESOLVED') {
+    if (rec.status == "RESOLVED") {
       console.log(`✅ ${rec.status} ${rec.id}`);
-    } else if (rec.status == 'DISABLED') {
-      console.log(`⚠️ ${rec.status} ${rec.id}`)
+    } else if (rec.status == "DISABLED") {
+      console.log(`⚠️ ${rec.status} ${rec.id}`);
     } else {
-      console.log(`🚫 ${rec.status} ${rec.id} -> ${rec.unresolvedDeps.join('; ')}`)
+      console.log(
+        `🚫 ${rec.status} ${rec.id} -> ${rec.unresolvedDeps.join("; ")}`
+      );
     }
   }
   process.exit();
@@ -76,4 +78,6 @@ dino
     console.error("- quitting");
     process.exit(1);
   });
-console.log(`💡 if your app doesn't start as expected, re-run with --debug to see what dependencies are not resolved`)
+console.log(
+  `💡 if your app doesn't start as expected, re-run with --debug to see what dependencies are not resolved`
+);

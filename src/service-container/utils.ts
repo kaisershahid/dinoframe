@@ -6,31 +6,31 @@ import {
   MethodType,
   ServiceMeta,
   ServiceRecord,
-  ServiceState
+  ServiceState,
 } from "./types";
 import {
   DecoratedClass,
   DecoratedClassBuilder,
   DecoratedMethod,
-  getGidsForBundle
+  getGidsForBundle,
 } from "../decorator";
-import {getDecoratedServiceRecords} from "./decorators";
-import cloneDeep from 'lodash.clonedeep';
-import {getOrMakeGidForConstructor} from "../decorator/registry";
+import { getDecoratedServiceRecords } from "./decorators";
+import cloneDeep from "lodash.clonedeep";
+import { getOrMakeGidForConstructor } from "../decorator/registry";
 
 /**
  * Normalizes DecoratedClass metadata.
  */
 export class DecoratedServiceRecord implements ServiceRecord {
   originalMeta: ClassServiceMetadata;
-  provider: string = '';
+  provider: string = "";
   id: string = "";
   gid: string = "";
   priority = 0;
   clazz: any;
   isDisabled?: boolean;
   isFactory?: boolean;
-  injectConfig: string = '';
+  injectConfig: string = "";
   config?: Record<string, any>;
   interfaces: string[] = [];
   status: ServiceState = ServiceState.registered;
@@ -69,7 +69,8 @@ export class DecoratedServiceRecord implements ServiceRecord {
     this.clazz = classMeta.clazz;
     this.priority = classMeta.metadata[0].priority ?? 0;
     this.interfaces = classMeta.metadata[0].interfaces ?? [];
-    this.subscribeToInterfaces = classMeta.metadata[0].subscribeToInterfaces ?? [];
+    this.subscribeToInterfaces =
+      classMeta.metadata[0].subscribeToInterfaces ?? [];
 
     this.processMethods(classMeta.methods);
     this.processMethods(classMeta.staticMethods, true);
@@ -88,7 +89,7 @@ export class DecoratedServiceRecord implements ServiceRecord {
           }
           if (params[0].matchInterface) {
             this.dependencies["#" + params[0].matchInterface] = params[0]
-              .matchCriteria ?? {min: 1};
+              .matchCriteria ?? { min: 1 };
           }
           return params[0];
         }
@@ -121,14 +122,15 @@ export class DecoratedServiceRecord implements ServiceRecord {
   /**
    * Returns a new instance with a deep copy of service meta.
    */
-  cloneAndRegisterNewService(newId: string, override: ServiceMeta): DecoratedServiceRecord {
-    const newClass: any =
-      class extends this.clazz {
-      }
+  cloneAndRegisterNewService(
+    newId: string,
+    override: ServiceMeta
+  ): DecoratedServiceRecord {
+    const newClass: any = class extends this.clazz {};
     const newGid = getOrMakeGidForConstructor(newClass);
     newClass.getDecoratorGid = () => {
       return newGid;
-    }
+    };
 
     const newMeta = this.createNewClassServiceMeta(override);
     newMeta.clazz = newClass;
@@ -143,7 +145,8 @@ export class DecoratedServiceRecord implements ServiceRecord {
     const newMeta = cloneDeep(this.originalMeta);
 
     const rec = newMeta.metadata[0];
-    const {priority, config, injectConfig, isFactory, interfaces, disabled} = override;
+    const { priority, config, injectConfig, isFactory, interfaces, disabled } =
+      override;
 
     rec.disabled = disabled === undefined ? this.isDisabled : disabled;
     if (priority !== undefined) {
@@ -175,7 +178,7 @@ export const getAllServicesMap = () => {
     map[rec.id].push(rec);
   }
   return map;
-}
+};
 
 export const getAllServicesByGidMap = () => {
   const map: Record<string, DecoratedServiceRecord> = {};
@@ -183,11 +186,13 @@ export const getAllServicesByGidMap = () => {
     map[rec.gid] = rec;
   }
   return map;
-}
+};
 
 let allServiceByGid: undefined | Record<string, DecoratedServiceRecord>;
 
-export const getAllServicesForBundle = (bundleId: string): DecoratedServiceRecord[] => {
+export const getAllServicesForBundle = (
+  bundleId: string
+): DecoratedServiceRecord[] => {
   if (!allServiceByGid) {
     allServiceByGid = getAllServicesByGidMap();
   }
@@ -201,7 +206,7 @@ export const getAllServicesForBundle = (bundleId: string): DecoratedServiceRecor
   }
 
   return recs;
-}
+};
 export const getServiceMetadataBuilder = () => {
   return new DecoratedClassBuilder<ServiceMeta, MethodInvoker, DependencyMeta>(
     "service-container"
@@ -224,23 +229,24 @@ export const cloneServiceRecord = (rec: ServiceRecord): ServiceRecord => {
     injectableFactory: [...rec.injectableFactory],
     activator: rec.activator,
     deactivator: rec.deactivator,
-    dependencies: {...rec.dependencies},
-    injectableMethods: {...rec.injectableMethods},
-    subscribeToInterfaces: [...rec.subscribeToInterfaces]
-  }
-}
+    dependencies: { ...rec.dependencies },
+    injectableMethods: { ...rec.injectableMethods },
+    subscribeToInterfaces: [...rec.subscribeToInterfaces],
+  };
+};
 
 /**
  * Generates the full service reference for a config from default provider. Note that the suffixes
  * are derived from ID_RUNTIME and CONFIG_PROVIDER_SUFFIX in `common/runtime.ts`. For circular dep
  * avoidance, moving to this file and dropping const refs.
  */
-export const makeConfigId = (subId: string): string => `${subId}@runtime.configProvider`
+export const makeConfigId = (subId: string): string =>
+  `${subId}@runtime.configProvider`;
 
 /**
  * Returns the subId or undefined from a service reference of the form `subId@runtime.configProvider`.
  */
 export const extractConfigSubId = (configId: string) => {
-  const [s1, s2] = configId.split('@runtime.configProvider');
+  const [s1, s2] = configId.split("@runtime.configProvider");
   return s2 === undefined ? undefined : s1;
-}
+};

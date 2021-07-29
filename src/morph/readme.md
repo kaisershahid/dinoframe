@@ -7,44 +7,47 @@ The morph module provides a super-simple way to manage 2-way data serialization 
 To start, consider this class:
 
 ```typescript
-import {getMorpherById, Morph, Property} from "./decorators";
+import { getMorpherById, Morph, Property } from "./decorators";
 
 @Morph()
 class BasicMorph {
   // explicitly defines firstName as a string and invokes the validator() function before setting.
   // source value is expected to be 'firstName'
   @Property({
-    type: 'string',
+    type: "string",
     validator: (val: any) => {
-      if (!val || val.trim() == '') {
-        return {message: 'cannot be empty'}
+      if (!val || val.trim() == "") {
+        return { message: "cannot be empty" };
       }
-    }
+    },
   })
-  firstName = '';
+  firstName = "";
 
   // sets 'familyName' source value to lastName and enforces required (not undefined/null/blank string/NaN)
-  @Property({required: true, name: 'familyName'})
-  lastName = '';
+  @Property({ required: true, name: "familyName" })
+  lastName = "";
 
-  // not explicitly defined as property, but setter and getter will be defined for it below  
+  // not explicitly defined as property, but setter and getter will be defined for it below
   dob: Date = new Date(NaN);
 
-  // define a setter so that you can do validation/normalization 
-  @PropertySet('dob')
+  // define a setter so that you can do validation/normalization
+  @PropertySet("dob")
   setDOB(date: any) {
     this.dob = new Date(Date.parse(date));
   }
 
-  // define a getter 
-  @PropertyGet('dob')
+  // define a getter
+  @PropertyGet("dob")
   getDOB() {
     return this.dob.toISOString();
   }
 }
 
 const transformer = getMorpherById(BasicMorph);
-const instance = transformer.deserialize({firstName: 'don', lastName: 'toilet-john'})
+const instance = transformer.deserialize({
+  firstName: "don",
+  lastName: "toilet-john",
+});
 ```
 
 This defines 3 different properties and shows off some of the attributes we can attach. We give the morpher our map of source values, and during the deserialization process, the morpher will do the following:
@@ -63,31 +66,31 @@ This defines 3 different properties and shows off some of the attributes we can 
 We're not limited to simple scalar values. We can also deserialize properties to a class instance or capture unmapped source keys to a map:
 
 ```typescript
-import {Morph, Property} from "./decorators";
+import { Morph, Property } from "./decorators";
 
 @Morph()
 class Profile {
   @Property()
-  location = '';
+  location = "";
   @Property()
   age = -1;
 }
 
 // allows morpher to properly apply parent decorators
-@Morph({inherits: {baseClass: BasicMorph}})
+@Morph({ inherits: { baseClass: BasicMorph } })
 class ComplexMorph extends BasicMorph {
   // expects the source 'profile' value to be a map and deserializes to Profile instance
-  @Property({type: Profile})
+  @Property({ type: Profile })
   profile: any;
 
   // assumes the source 'properties' is an object
   @Property()
-  properties: Record<string, any> = {}
+  properties: Record<string, any> = {};
 
   // collects all source keys that weren't explicitly mapped to a property
   // (e.g. everything else except 'profile' and 'properties')
-  @Property({name: '*'})
-  map: Record<string, any> = {}
+  @Property({ name: "*" })
+  map: Record<string, any> = {};
 }
 ```
 
@@ -96,43 +99,43 @@ class ComplexMorph extends BasicMorph {
 Morph also supports limited polymorphism! Simply define the discriminator column on the main class and map each discriminator value to the subclasses:
 
 ```typescript
-import {getMorpherById, Morph, Property} from "./decorators";
+import { getMorpherById, Morph, Property } from "./decorators";
 
 @Morph({
-  discriminatorCol: 'type'
+  discriminatorCol: "type",
 })
 class PolyMain {
-  @Property({required: true})
-  type: string = '';
+  @Property({ required: true })
+  type: string = "";
 }
 
 @Morph({
   inherits: {
     baseClass: PolyMain,
-    discriminatorValue: 'A'
-  }
+    discriminatorValue: "A",
+  },
 })
 class PolyA extends PolyMain {
   @Property()
-  propA = 'a';
+  propA = "a";
 }
 
 @Morph({
   inherits: {
     baseClass: PolyMain,
-    discriminatorValue: 'B'
-  }
+    discriminatorValue: "B",
+  },
 })
 class PolyB extends PolyMain {
   @Property()
-  propB = 'b';
+  propB = "b";
 }
 
 const m = getMorpherById(PolyMain);
 // returns instance of PolyA
-m.deserialize({type: 'A'})
+m.deserialize({ type: "A" });
 // returns instance of PolyB
-m.deserialize({type: 'B'})
+m.deserialize({ type: "B" });
 ```
 
 ## Excluding Properties in Serialization
@@ -162,9 +165,9 @@ What this basically means is if a parent ignores a property, the child can redef
 
 If for some reason all the other decorators don't fully fit your needs in some cases, you can hijack the serialization/deserialization with `@Serialize` and `@Deserialize`. The expected method signatures are as follows:
 
-|Decorator     | Method
-|---           |---
-|`@Serialize`  |`(morphManager?: MorpherManager<any>)`
-|`@Deserialize`|`(source: any, morphManager?: MorpherManager<any>)`
+| Decorator      | Method                                              |
+| -------------- | --------------------------------------------------- |
+| `@Serialize`   | `(morphManager?: MorpherManager<any>)`              |
+| `@Deserialize` | `(source: any, morphManager?: MorpherManager<any>)` |
 
 The morphManager is given as a convenience so that you can selectively use the correct serialization/deserialization context that kicked off processing of the given source object.
