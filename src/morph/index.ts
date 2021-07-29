@@ -1,23 +1,26 @@
 import {
   DecoratedMorphClass,
   FieldError,
-  Morpher, MorpherManager,
+  Morpher,
+  MorpherManager,
   MorphError,
   ObjectError,
-  TransformerPropertyDef
+  TransformerPropertyDef,
 } from "./types";
-import {getGid} from "../decorator/registry";
+import { getGid } from "../decorator/registry";
 
-export const NAME_CATCH_ALL = '*';
+export const NAME_CATCH_ALL = "*";
 
-export class MorphMarshaller<Manager extends MorpherManager<any> = any> implements Morpher {
+export class MorphMarshaller<Manager extends MorpherManager<any> = any>
+  implements Morpher
+{
   private manager: Manager;
   private clazz: any;
   private baseClass: any;
   private originalMeta: DecoratedMorphClass;
 
   propertyDefs: Record<string, TransformerPropertyDef> = {};
-  discriminatorCol = '';
+  discriminatorCol = "";
   subclasses: Record<string, typeof Function> = {};
   ignoreProps: string[] = [];
   finalizeMethod?: string;
@@ -32,13 +35,16 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
     const morphMeta = decoratedMeta.metadata[0];
     this.ignoreProps = morphMeta.ignoreProps ?? [];
     // a base class without discriminatorValue means we apply parent's decorators too
-    if (morphMeta.inherits?.baseClass && !morphMeta.inherits.discriminatorValue) {
+    if (
+      morphMeta.inherits?.baseClass &&
+      !morphMeta.inherits.discriminatorValue
+    ) {
       this.baseClass = morphMeta.inherits.baseClass;
     }
 
     if (this.clazz.___discriminatorMap) {
       this.discriminatorCol = this.clazz.___discriminatorCol;
-      this.subclasses = {...this.clazz.___discriminatorMap};
+      this.subclasses = { ...this.clazz.___discriminatorMap };
     }
     this.init();
   }
@@ -58,7 +64,7 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
 
   private initProperties() {
     for (const propertyName in this.originalMeta.properties) {
-      const {name, ...rest} = this.originalMeta.properties[propertyName][0];
+      const { name, ...rest } = this.originalMeta.properties[propertyName][0];
       this.updateProperty(name, rest);
     }
   }
@@ -80,10 +86,10 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
 
   private updateProperty(name: string, def: Partial<TransformerPropertyDef>) {
     if (!this.propertyDefs[name]) {
-      this.propertyDefs[name] = {name}
+      this.propertyDefs[name] = { name };
     }
 
-    this.propertyDefs[name] = {...this.propertyDefs[name], ...def}
+    this.propertyDefs[name] = { ...this.propertyDefs[name], ...def };
   }
 
   /**
@@ -98,26 +104,39 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
         const subclass = this.subclasses[dvalue];
         return [new subclass(), subclass];
       } catch (err) {
-        throw new MorphError(`${this.clazz.name}: could not map ${this.clazz.___discriminatorCol}=${source[this.clazz.___discriminatorCol]} to a subclass: ${err.message}`);
+        throw new MorphError(
+          `${this.clazz.name}: could not map ${
+            this.clazz.___discriminatorCol
+          }=${source[this.clazz.___discriminatorCol]} to a subclass: ${
+            err.message
+          }`
+        );
       }
     } else {
       return [new this.clazz(), null];
     }
   }
 
-  doSetValue(inst: any, val: any, def: TransformerPropertyDef, errors: Record<string, any>) {
+  doSetValue(
+    inst: any,
+    val: any,
+    def: TransformerPropertyDef,
+    errors: Record<string, any>
+  ) {
     const name = def.name;
     // assumes name key not present, so skip (but check required first)
     if (val === undefined || val === null) {
       if (def.required) {
-        errors[name] = {message: 'required'};
+        errors[name] = { message: "required" };
       }
       return;
     }
 
-    if (typeof def.type == 'function') {
+    if (typeof def.type == "function") {
       if (val instanceof Array) {
-        val = val.map(v => this.deserializeNested(v, def.type as typeof Function))
+        val = val.map((v) =>
+          this.deserializeNested(v, def.type as typeof Function)
+        );
       } else {
         val = this.deserializeNested(val, def.type as typeof Function);
       }
@@ -125,7 +144,7 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
       try {
         ValueFactory.validateValue(val, def);
       } catch (e) {
-        errors[name] = e
+        errors[name] = e;
       }
     }
 
@@ -133,7 +152,7 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
       try {
         inst[def.setter](val);
       } catch (err) {
-        errors[name] = {message: err.message, exception: err};
+        errors[name] = { message: err.message, exception: err };
         return;
       }
     } else if (def.propertyName) {
@@ -144,8 +163,8 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
           return;
         }
       } else if (def.required) {
-        if (val === '' || val === null) {
-          errors[name] = {message: 'required'};
+        if (val === "" || val === null) {
+          errors[name] = { message: "required" };
           return;
         }
       }
@@ -254,9 +273,11 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
         val = source[def.propertyName];
       }
 
-      if (typeof def.type == 'function') {
+      if (typeof def.type == "function") {
         if (val instanceof Array) {
-          val = val.map(v => this.serializeNested(v, def.type as typeof Function));
+          val = val.map((v) =>
+            this.serializeNested(v, def.type as typeof Function)
+          );
         } else {
           val = this.serializeNested(val, def.type as typeof Function);
         }
@@ -293,7 +314,7 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
     const map: any = {};
 
     if (this.serializeMethod) {
-      return source[this.serializeMethod](this.manager)
+      return source[this.serializeMethod](this.manager);
     }
 
     if (this.baseClass) {
@@ -344,8 +365,8 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any> implemen
 
 export class ValueFactory {
   static validateValue(val: any, def: TransformerPropertyDef) {
-    if (def.listType == 'strict' && !(val instanceof Array)) {
-      throw new FieldError(`listType=strict, ${typeof val} given`)
+    if (def.listType == "strict" && !(val instanceof Array)) {
+      throw new FieldError(`listType=strict, ${typeof val} given`);
     }
 
     if (val instanceof Array) {
@@ -374,24 +395,28 @@ export class ValueFactory {
 
   static assertProperType(val: any, def: TransformerPropertyDef) {
     switch (def.type) {
-      case 'boolean':
-        if (typeof val != 'boolean') {
+      case "boolean":
+        if (typeof val != "boolean") {
           throw new FieldError(`not a boolean: ${JSON.stringify(val)}`);
         }
         break;
-      case 'string':
-        if (typeof val != 'string') {
-          throw new FieldError(`not a string: ${JSON.stringify(val)}`)
+      case "string":
+        if (typeof val != "string") {
+          throw new FieldError(`not a string: ${JSON.stringify(val)}`);
         }
         break;
-      case 'number':
-        if (typeof val != 'number') {
-          throw new FieldError(`not a number: ${JSON.stringify(val)}`)
+      case "number":
+        if (typeof val != "number") {
+          throw new FieldError(`not a number: ${JSON.stringify(val)}`);
         }
         break;
       case "enum":
         if (!def.enumValues?.includes(val)) {
-          throw new FieldError(`${val} does not match any enum values: [${def.enumValues?.join('; ')}]`);
+          throw new FieldError(
+            `${val} does not match any enum values: [${def.enumValues?.join(
+              "; "
+            )}]`
+          );
         }
         break;
     }
@@ -407,11 +432,13 @@ export class BasicMorpherManager implements MorpherManager<MorphMarshaller> {
     }
   }
 
-  getByClassOrId(clazzOrId: any): MorphMarshaller<BasicMorpherManager> | undefined {
+  getByClassOrId(
+    clazzOrId: any
+  ): MorphMarshaller<BasicMorpherManager> | undefined {
     if (!clazzOrId) {
       return;
     }
-    const gid = typeof clazzOrId == 'string' ? clazzOrId : getGid(clazzOrId);
+    const gid = typeof clazzOrId == "string" ? clazzOrId : getGid(clazzOrId);
     return this.morphers[gid];
   }
 

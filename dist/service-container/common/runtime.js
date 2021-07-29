@@ -8,7 +8,12 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var RuntimeConfigProvider_1;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RuntimeConfigProvider = exports.INTERFACE_CONFIG_INSTANCE = exports.CONFIG_PROVIDER_SUFFIX = exports.discover = exports.DefaultRuntimeEnv = exports.INTERFACE_ENV = exports.StandardConfigWithId = exports.StandardConfig = exports.ID_RUNTIME = void 0;
 const decorator_1 = require("../../decorator");
 const decorators_1 = require("../decorators");
 const types_1 = require("../types");
@@ -41,8 +46,19 @@ class StandardConfig {
     }
 }
 exports.StandardConfig = StandardConfig;
+class StandardConfigWithId extends StandardConfig {
+    constructor(id, cfg) {
+        super(cfg);
+        this.id = id;
+    }
+    getId() {
+        return this.id;
+    }
+}
+exports.StandardConfigWithId = StandardConfigWithId;
 /** Interface of the defacto RuntimeEnv instance. */
 exports.INTERFACE_ENV = "runtime.env";
+console.log(decorators_1.Service);
 /**
  * Exposes **process.env** as a `Config`. Nothing fancy.
  *
@@ -68,4 +84,58 @@ exports.DefaultRuntimeEnv = DefaultRuntimeEnv;
 exports.discover = () => {
     return exports.ID_RUNTIME;
 };
+exports.CONFIG_PROVIDER_SUFFIX = "configProvider";
+/**
+ * Allows ConfigProvider to handle service as ConfigWithId.
+ */
+exports.INTERFACE_CONFIG_INSTANCE = `${exports.CONFIG_PROVIDER_SUFFIX}.configInstance`;
+let RuntimeConfigProvider = RuntimeConfigProvider_1 = class RuntimeConfigProvider {
+    constructor() {
+        this.configs = {};
+    }
+    static getSingleton() {
+        return this.singleton;
+    }
+    has(id) {
+        return this.configs[id] !== undefined;
+    }
+    resolve(id) {
+        if (!this.configs[id]) {
+            throw new Error(`could not find config: ${id}`);
+        }
+        return this.configs[id];
+    }
+    addConfig(id, config) {
+        this.configs[id] = config;
+    }
+    onAvailableInterface(_interface, services) {
+        for (const svc of services) {
+            if (svc.getId && svc.getAll) {
+                this.addConfig(svc.getId(), svc);
+            }
+        }
+    }
+    setConfigs(configs) {
+        this.onAvailableInterface("", configs);
+    }
+};
+RuntimeConfigProvider.singleton = new RuntimeConfigProvider_1();
+__decorate([
+    __param(0, decorators_1.Inject({
+        matchInterface: exports.INTERFACE_CONFIG_INSTANCE,
+        matchCriteria: { min: 0 },
+    }))
+], RuntimeConfigProvider.prototype, "setConfigs", null);
+__decorate([
+    decorators_1.Factory
+], RuntimeConfigProvider, "getSingleton", null);
+RuntimeConfigProvider = RuntimeConfigProvider_1 = __decorate([
+    RuntimeBundle,
+    decorators_1.Service(`${exports.ID_RUNTIME}.${exports.CONFIG_PROVIDER_SUFFIX}`, {
+        isFactory: true,
+        priority: types_1.ContainerPhases.bootstrap,
+        subscribeToInterfaces: [exports.INTERFACE_CONFIG_INSTANCE],
+    })
+], RuntimeConfigProvider);
+exports.RuntimeConfigProvider = RuntimeConfigProvider;
 //# sourceMappingURL=runtime.js.map

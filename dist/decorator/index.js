@@ -4,6 +4,7 @@
  * metadata for reflection.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.DecoratedClassBuilder = exports.duplicateDecoratorsForGid = exports.filterByDecorator = exports.filterMetadataByProvider = exports.flattenManyBundlesMetadata = exports.getManyBundlesMetadata = exports.getGidsForBundle = exports.getBundledMetadata = exports.getGlobalDecoratedClasses = exports.BundleDecoratorFactory = exports.getBundleId = exports.hasBundleId = exports.getEmptyDecoratedClass = exports.RecordType = void 0;
 const registry_1 = require("./registry");
 var RecordType;
 (function (RecordType) {
@@ -68,25 +69,37 @@ const addToGlobalRegistry = (gid, metadata) => {
     }
     globalRegistry[gid].push(metadata);
 };
-exports.getGlobalDecoratedClasses = () => {
+exports.getGlobalDecoratedClasses = (filter) => {
+    if (!filter) {
+        filter = () => true;
+    }
     const list = [];
     for (const gid of Object.keys(globalRegistry)) {
         list.push(...globalRegistry[gid]);
     }
-    return list;
+    return list.filter(filter);
 };
 const bundleRegistry = {};
+const bundleRegistryGid = {};
 const addToBundleRegistry = (id, metadata) => {
     if (!bundleRegistry[id]) {
         bundleRegistry[id] = [];
+        bundleRegistryGid[id] = [];
     }
     bundleRegistry[id].push(metadata);
+    bundleRegistryGid[id].push(metadata.gid);
 };
 exports.getBundledMetadata = (id) => {
     if (!bundleRegistry[id]) {
         return { id, metadata: [] };
     }
     return { id, metadata: [...bundleRegistry[id]] };
+};
+exports.getGidsForBundle = (id) => {
+    if (!bundleRegistryGid[id]) {
+        return [];
+    }
+    return [...bundleRegistryGid[id]];
 };
 exports.getManyBundlesMetadata = (ids) => {
     return ids.map((id) => exports.getBundledMetadata(id));
@@ -110,6 +123,7 @@ exports.filterMetadataByProvider = (metadata, provider) => {
 exports.filterByDecorator = (metadata, decorator) => {
     return metadata.filter((m) => m.decorator == decorator || m._decorator == decorator);
 };
+exports.duplicateDecoratorsForGid = (gid, newGid) => { };
 /**
  * Iteratively construct a class tree of decorators for easy in-process and post-
  * process introspection. This is a concrete and easy-to-work-with alternative
@@ -124,10 +138,16 @@ class DecoratedClassBuilder {
         this.curGid = "";
         this.cur = exports.getEmptyDecoratedClass("", "");
         this.finalized = [];
+        this.map = {};
+        this.changeTicks = 0;
         this.provider = provider;
         decClassInstances.push(this);
     }
+    getChangeTicks() {
+        return this.changeTicks;
+    }
     checkProto(proto) {
+        this.changeTicks++;
         const gid = registry_1.getOrMakeGidForConstructor(proto);
         if (this.curGid != gid) {
             this.cur = exports.getEmptyDecoratedClass(gid, this.provider);
@@ -137,8 +157,12 @@ class DecoratedClassBuilder {
             // can avoid boilerplate that needs to process the last seen class (since there's
             // no decorator-end event, we'd have to manually do this).
             this.finalized.push(this.cur);
+            this.map[gid] = this.cur;
             addToGlobalRegistry(gid, this.cur);
         }
+    }
+    getByGid(gid) {
+        return this.map[gid];
     }
     initProperty(name, isStatic, metadata, decorator) {
         const target = isStatic ? this.cur.staticProperties : this.cur.properties;

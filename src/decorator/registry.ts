@@ -25,8 +25,8 @@ export const findGidForConstructor = (t: any): string => {
     o = t.prototype;
   }
 
-  let gidT = '';
-  let gidO = '';
+  let gidT = "";
+  let gidO = "";
 
   for (let i = 0; i < prototypeOrder.length; i++) {
     if (prototypeOrder[i] === o) {
@@ -34,13 +34,13 @@ export const findGidForConstructor = (t: any): string => {
     }
 
     if (constructorRegistry[i] === t) {
-      gidT = `${i + 1}`
+      gidT = `${i + 1}`;
     }
   }
 
   // indicates class t is a subclass of gidO, so return ''
   if (!gidT && gidO) {
-    return '';
+    return "";
   } else if (gidO) {
     return gidO;
   }
@@ -113,7 +113,6 @@ export const getOrMakeGidForConstructor = (t: any): string => {
   constructorRegistry[lastGid] = t;
   lastTargetWasClass = isClass;
 
-
   o.___gid = id;
 
   return id;
@@ -143,7 +142,7 @@ export type GidAccessible = {
 };
 
 export const hasGidAccessor = (o: any): o is GidAccessible =>
-  typeof o?.getDecoratorGid === "function" || typeof o?.___gid === 'string';
+  typeof o?.getDecoratorGid === "function" || typeof o?.___gid === "string";
 
 /**
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
@@ -158,7 +157,7 @@ export const getGid = (o: any) => {
  * Attaches `getDecoratorGid(): string` to target for convenient access to GID.
  * @todo guard against non-function?
  */
-export const RegistryGidAccessor = <T extends { new(...args: any[]): {} }>(
+export const RegistryGidAccessor = <T extends { new (...args: any[]): {} }>(
   target: T
 ): T & GidAccessible => {
   if (hasGidAccessor(target)) {
@@ -174,7 +173,6 @@ export const RegistryGidAccessor = <T extends { new(...args: any[]): {} }>(
   } else {
     (target as any).___gid = gid;
   }
-
 
   return target as any;
 };

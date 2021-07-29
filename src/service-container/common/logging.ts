@@ -18,12 +18,12 @@
  * - StandardEventFormatter <- *LoggerEventFormatter
  * - LoggerWriterConsole <- *LoggerWriter
  */
-import {Factory, Inject, Service} from "../decorators";
+import { Factory, Inject, Service } from "../decorators";
 import * as console from "console";
-import {BundleDecoratorFactory} from "../../decorator";
-import {FactoryContainer} from "../types";
+import { BundleDecoratorFactory } from "../../decorator";
+import { FactoryContainer } from "../types";
 
-export const ID_LOGGER = 'logger';
+export const ID_LOGGER = "logger";
 const LoggerBundle = BundleDecoratorFactory(ID_LOGGER);
 
 export enum LoggerLevel {
@@ -31,40 +31,52 @@ export enum LoggerLevel {
   DEBUG,
   INFO,
   WARN,
-  ERROR
+  ERROR,
 }
 
 const LoggerLevelToLcase: Record<LoggerLevel, keyof typeof console> = {
-  [LoggerLevel.TRACE]: 'trace',
-  [LoggerLevel.DEBUG]: 'debug',
-  [LoggerLevel.INFO]: 'info',
-  [LoggerLevel.WARN]: 'warn',
-  [LoggerLevel.ERROR]: 'error',
-}
+  [LoggerLevel.TRACE]: "trace",
+  [LoggerLevel.DEBUG]: "debug",
+  [LoggerLevel.INFO]: "info",
+  [LoggerLevel.WARN]: "warn",
+  [LoggerLevel.ERROR]: "error",
+};
 
 /**
  * Text labels for log levels, as `%-5s`
  */
 const LoggerLevelToUcasePadded: Record<LoggerLevel, string> = {
-  [LoggerLevel.TRACE]: 'TRACE',
-  [LoggerLevel.DEBUG]: 'DEBUG',
-  [LoggerLevel.INFO]: 'INFO ',
-  [LoggerLevel.WARN]: 'WARN ',
-  [LoggerLevel.ERROR]: 'ERROR ',
-}
+  [LoggerLevel.TRACE]: "TRACE",
+  [LoggerLevel.DEBUG]: "DEBUG",
+  [LoggerLevel.INFO]: "INFO ",
+  [LoggerLevel.WARN]: "WARN ",
+  [LoggerLevel.ERROR]: "ERROR ",
+};
 
-export const INTERFACE_LOG_LOGGER = 'logger.logger';
+export const INTERFACE_LOG_LOGGER = "logger.logger";
 
 export interface Logger {
-  trace(messageOrError: string | Error | any, err?: Error | any, ...args: any[]);
+  trace(
+    messageOrError: string | Error | any,
+    err?: Error | any,
+    ...args: any[]
+  );
 
-  debug(messageOrError: string | Error | any, err?: Error | any, ...args: any[]);
+  debug(
+    messageOrError: string | Error | any,
+    err?: Error | any,
+    ...args: any[]
+  );
 
   info(messageOrError: string | Error | any, err?: Error | any, ...args: any[]);
 
   warn(messageOrError: string | Error | any, err?: Error | any, ...args: any[]);
 
-  error(messageOrError: string | Error | any, err?: Error | any, ...args: any[]);
+  error(
+    messageOrError: string | Error | any,
+    err?: Error | any,
+    ...args: any[]
+  );
 }
 
 export class LoggerWrappingWriter implements Logger {
@@ -77,97 +89,144 @@ export class LoggerWrappingWriter implements Logger {
   }
 
   debug(messageOrError: any, err: any, ...args: any[]) {
-    this.writer.writeEvent({
-      name: this.name,
-      time: new Date(),
-      level: LoggerLevel.DEBUG
-    }, messageOrError, err, ...args);
+    this.writer.writeEvent(
+      {
+        name: this.name,
+        time: new Date(),
+        level: LoggerLevel.DEBUG,
+      },
+      messageOrError,
+      err,
+      ...args
+    );
   }
 
   error(messageOrError: any, err: any, ...args: any[]) {
-    this.writer.writeEvent({
-      name: this.name,
-      time: new Date(),
-      level: LoggerLevel.ERROR
-    }, messageOrError, err, ...args);
+    this.writer.writeEvent(
+      {
+        name: this.name,
+        time: new Date(),
+        level: LoggerLevel.ERROR,
+      },
+      messageOrError,
+      err,
+      ...args
+    );
   }
 
   info(messageOrError: any, err: any, ...args: any[]) {
-    this.writer.writeEvent({
-      name: this.name,
-      time: new Date(),
-      level: LoggerLevel.INFO
-    }, messageOrError, err, ...args);
+    this.writer.writeEvent(
+      {
+        name: this.name,
+        time: new Date(),
+        level: LoggerLevel.INFO,
+      },
+      messageOrError,
+      err,
+      ...args
+    );
   }
 
   trace(messageOrError: any, err: any, ...args: any[]) {
-    this.writer.writeEvent({
-      name: this.name,
-      time: new Date(),
-      level: LoggerLevel.TRACE
-    }, messageOrError, err, ...args);
+    this.writer.writeEvent(
+      {
+        name: this.name,
+        time: new Date(),
+        level: LoggerLevel.TRACE,
+      },
+      messageOrError,
+      err,
+      ...args
+    );
   }
 
   warn(messageOrError: any, err: any, ...args: any[]) {
-    this.writer.writeEvent({
-      name: this.name,
-      time: new Date(),
-      level: LoggerLevel.WARN
-    }, messageOrError, err, ...args);
+    this.writer.writeEvent(
+      {
+        name: this.name,
+        time: new Date(),
+        level: LoggerLevel.WARN,
+      },
+      messageOrError,
+      err,
+      ...args
+    );
   }
-
 }
 
 export type LogEventContext = {
   time: Date;
   level: LoggerLevel;
   name: string;
-}
+};
 
-export const INTERFACE_LOG_WRITER = 'logger.writer';
+export const INTERFACE_LOG_WRITER = "logger.writer";
 
 export interface LoggerWriter {
   getMappedNames(): string[];
 
-  writeEvent(context: LogEventContext, messageOrError: string | Error | any, err: Error | any, ...args: any[]);
+  writeEvent(
+    context: LogEventContext,
+    messageOrError: string | Error | any,
+    err: Error | any,
+    ...args: any[]
+  );
 }
 
-export const INTERFACE_LOG_FORMATTER = 'logger.formatter';
+export const INTERFACE_LOG_FORMATTER = "logger.formatter";
 
 export interface LoggerEventFormatter {
-  createEvent(context: LogEventContext, messageOrError: string | Error | any, err: Error | any, ...args: any[]): string;
+  createEvent(
+    context: LogEventContext,
+    messageOrError: string | Error | any,
+    err: Error | any,
+    ...args: any[]
+  ): string;
 }
 
 @LoggerBundle
 @Service("logger.formatter.standard", {
-  interfaces: [INTERFACE_LOG_FORMATTER]
+  interfaces: [INTERFACE_LOG_FORMATTER],
 })
 export class StandardEventFormatter implements LoggerEventFormatter {
-  createEvent({
-                time,
-                level,
-                name
-              }, messageOrError: string | Error | any, err: Error | any, ...args: any[]) {
+  createEvent(
+    { time, level, name },
+    messageOrError: string | Error | any,
+    err: Error | any,
+    ...args: any[]
+  ) {
     const iso = time.toISOString().substr(0, 23);
     const tstamp = `${iso.substr(0, 10)} ${iso.substr(11, 12)}`;
-    return `${tstamp} [${LoggerLevelToUcasePadded[level]}] [${name}] ${StandardEventFormatter.formatArgs(messageOrError, err, ...args)}`;
+    return `${tstamp} [${
+      LoggerLevelToUcasePadded[level]
+    }] [${name}] ${StandardEventFormatter.formatArgs(
+      messageOrError,
+      err,
+      ...args
+    )}`;
   }
 
-  static formatArgs(messageOrError: string | Error | any, err: Error | any, ...args: any[]): string {
+  static formatArgs(
+    messageOrError: string | Error | any,
+    err: Error | any,
+    ...args: any[]
+  ): string {
     const buff: string[] = [];
     let restArgs: any[] = args;
 
     if (messageOrError instanceof Error) {
-      buff.push(`${messageOrError.message} ${JSON.stringify({stacktrace: messageOrError.stack})}`);
-      if (err !== undefined)
-        restArgs = [err, ...args];
+      buff.push(
+        `${messageOrError.message} ${JSON.stringify({
+          stacktrace: messageOrError.stack,
+        })}`
+      );
+      if (err !== undefined) restArgs = [err, ...args];
     } else if (err instanceof Error) {
       buff.push(messageOrError);
-      buff.push(`${err.message} ${JSON.stringify({stacktrace: err.stack})}`);
-    } else if (typeof messageOrError == 'string') {
+      buff.push(`${err.message} ${JSON.stringify({ stacktrace: err.stack })}`);
+    } else if (typeof messageOrError == "string") {
       buff.push(messageOrError);
-      if (err !== undefined)
-        restArgs = [err, ...args];
+      if (err !== undefined) restArgs = [err, ...args];
     } else {
       restArgs = [messageOrError, err, ...args];
     }
@@ -180,7 +239,7 @@ export class StandardEventFormatter implements LoggerEventFormatter {
       }
     }
 
-    return buff.join(' ')
+    return buff.join(" ");
   }
 }
 
@@ -210,31 +269,33 @@ export class LoggerWriterProxy implements LoggerWriter {
 
 @LoggerBundle
 @Service("logger.writer.console", {
-  interfaces: [INTERFACE_LOG_WRITER]
+  interfaces: [INTERFACE_LOG_WRITER],
 })
 export class LoggerWriterConsole implements LoggerWriter {
   level = LoggerLevel.INFO;
   formatter: LoggerEventFormatter = new StandardEventFormatter();
 
   getMappedNames(): string[] {
-    return ['*'];
+    return ["*"];
   }
 
   writeEvent(context, ...args: any[]) {
-    const {level} = context;
+    const { level } = context;
     if (level < this.level) {
       return;
     }
 
     const methodName = LoggerLevelToLcase[level];
     const [msgOrError, err, ...rest] = args;
-    console[methodName](this.formatter.createEvent(context, msgOrError, err, ...rest))
+    console[methodName](
+      this.formatter.createEvent(context, msgOrError, err, ...rest)
+    );
   }
 }
 
 @LoggerBundle
-@Service('logger.loggerFactory', {
-  isFactory: true
+@Service("logger.loggerFactory", {
+  isFactory: true,
 })
 export class LoggerFactory implements FactoryContainer {
   private static inst: LoggerFactory = undefined as any;
@@ -250,15 +311,15 @@ export class LoggerFactory implements FactoryContainer {
 
   private writers: LoggerWriter[] = [];
   private prefixToWriters: Record<string, LoggerWriter> = {
-    '*': new LoggerWriterConsole()
+    "*": new LoggerWriterConsole(),
   };
   private loggers: Record<string, Logger> = {};
 
   // @todo fixedLoggers -- supports logger.logger interface services
 
   setWriters(
-    @Inject({matchInterface: INTERFACE_LOG_WRITER, matchCriteria: {min: 0}})
-      writers: LoggerWriter[]
+    @Inject({ matchInterface: INTERFACE_LOG_WRITER, matchCriteria: { min: 0 } })
+    writers: LoggerWriter[]
   ) {
     for (const writer of writers) {
       for (const prefix of writer.getMappedNames()) {
@@ -277,7 +338,7 @@ export class LoggerFactory implements FactoryContainer {
       return this.loggers[name];
     }
 
-    let p = '*';
+    let p = "*";
     for (const prefix of Object.keys(this.prefixToWriters)) {
       if (name == prefix || name.startsWith(prefix)) {
         if (prefix.length > p.length) {
@@ -302,6 +363,6 @@ export class LoggerFactory implements FactoryContainer {
 }
 
 export const discover = () => {
-  [LoggerFactory, LoggerWriterConsole]
+  [LoggerFactory, LoggerWriterConsole];
   return ID_LOGGER;
-}
+};

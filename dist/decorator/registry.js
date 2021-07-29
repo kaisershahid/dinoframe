@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RegistryGidAccessor = exports.getGid = exports.hasGidAccessor = exports.swapConstructorWithSubclass = exports.getConstructorForGid = exports.wasLastClass = exports.isSameGid = exports.getLastGid = exports.getOrMakeGidForConstructor = exports.findGidForConstructor = void 0;
 /**
  * The decorator registry provides a consistent way to get a unique identifier
  * for the class currently being processed. You  can also get the gid of any
@@ -16,6 +17,7 @@ const constructorRegistry = {};
 let gcounter = 1;
 let lastGid = "";
 let lastTarget;
+let lastTargetClass;
 let lastTargetWasClass = false;
 exports.findGidForConstructor = (t) => {
     const isClass = typeof t == "function";
@@ -23,12 +25,24 @@ exports.findGidForConstructor = (t) => {
     if (isClass) {
         o = t.prototype;
     }
+    let gidT = "";
+    let gidO = "";
     for (let i = 0; i < prototypeOrder.length; i++) {
-        if (prototypeOrder[i] === o || prototypeOrder[i] === t) {
-            return `${i + 1}`;
+        if (prototypeOrder[i] === o) {
+            gidO = `${i + 1}`;
+        }
+        if (constructorRegistry[i] === t) {
+            gidT = `${i + 1}`;
         }
     }
-    return "";
+    // indicates class t is a subclass of gidO, so return ''
+    if (!gidT && gidO) {
+        return "";
+    }
+    else if (gidO) {
+        return gidO;
+    }
+    return gidT;
 };
 /**
  * Lifecycle:
@@ -44,13 +58,40 @@ exports.getOrMakeGidForConstructor = (t) => {
     if (isClass) {
         o = t.prototype;
     }
-    // transition from property/method to class
-    if (isClass && !lastTargetWasClass && lastTarget == o) {
-        lastTargetWasClass = true;
-        constructorRegistry[lastGid] = t;
-        return lastGid;
+    // console.log({
+    //   isClass,
+    //   lastGid,
+    //   lastTargetWasClass,
+    //   name: t.name,
+    //   equals: lastTarget === o,
+    //   equalsClass: lastTargetClass === t,
+    //   t,
+    //   o,
+    //   lastTargetClass,
+    //   lastTarget
+    // })
+    if (isClass) {
+        const recastGid = lastGid;
+        if (!lastTargetWasClass) {
+            // previous calls were for method/property on the same prototype, so move to class
+            if (lastTarget === o) {
+                t.getDecoratorGid = () => {
+                    return recastGid;
+                };
+                lastTargetWasClass = true;
+                lastTargetClass = t;
+                constructorRegistry[lastGid] = t;
+                return lastGid;
+            }
+        }
+        else if (lastTargetClass === t) {
+            t.getDecoratorGid = () => {
+                return recastGid;
+            };
+            return lastGid;
+        }
     }
-    if (o === lastTarget) {
+    else if (!lastTargetWasClass && o === lastTarget) {
         return lastGid;
     }
     let id = exports.findGidForConstructor(t);
@@ -60,10 +101,12 @@ exports.getOrMakeGidForConstructor = (t) => {
     id = `${gcounter++}`;
     lastGid = id;
     lastTarget = o;
+    lastTargetClass = t;
     prototypeRegistry[id] = o;
     prototypeOrder.push(o);
     constructorRegistry[lastGid] = t;
     lastTargetWasClass = isClass;
+    o.___gid = id;
     return id;
 };
 exports.getLastGid = () => lastGid;
@@ -81,12 +124,16 @@ exports.swapConstructorWithSubclass = (subclass) => {
         prototypeRegistry[lastGid] = subclass;
     }
 };
-exports.hasGidAccessor = (o) => typeof (o === null || o === void 0 ? void 0 : o.getDecoratorGid) === "function";
+exports.hasGidAccessor = (o) => typeof (o === null || o === void 0 ? void 0 : o.getDecoratorGid) === "function" || typeof (o === null || o === void 0 ? void 0 : o.___gid) === "string";
 /**
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
  * returned, otherwise, the class will be
  */
-exports.getGid = (o) => exports.RegistryGidAccessor(o).getDecoratorGid();
+exports.getGid = (o) => {
+    var _a;
+    const acc = exports.RegistryGidAccessor(o);
+    return (_a = acc.___gid) !== null && _a !== void 0 ? _a : acc.getDecoratorGid();
+};
 /**
  * Attaches `getDecoratorGid(): string` to target for convenient access to GID.
  * @todo guard against non-function?
@@ -99,6 +146,12 @@ exports.RegistryGidAccessor = (target) => {
     target.getDecoratorGid = () => {
         return gid;
     };
+    if (target.prototype) {
+        target.prototype.___gid = gid;
+    }
+    else {
+        target.___gid = gid;
+    }
     return target;
 };
 //# sourceMappingURL=registry.js.map

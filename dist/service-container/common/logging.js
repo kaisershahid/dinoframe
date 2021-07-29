@@ -1,22 +1,35 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
     return result;
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
 };
 var StandardEventFormatter_1, LoggerFactory_1;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.discover = exports.LoggerFactory = exports.LoggerWriterConsole = exports.LoggerWriterProxy = exports.StandardEventFormatter = exports.INTERFACE_LOG_FORMATTER = exports.INTERFACE_LOG_WRITER = exports.LoggerWrappingWriter = exports.INTERFACE_LOG_LOGGER = exports.LoggerLevel = exports.ID_LOGGER = void 0;
 /**
  * Provides basic interfaces and some stream-oriented implementations to get you started on adding
  * logging.
@@ -40,7 +53,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const decorators_1 = require("../decorators");
 const console = __importStar(require("console"));
 const decorator_1 = require("../../decorator");
-exports.ID_LOGGER = 'logger';
+exports.ID_LOGGER = "logger";
 const LoggerBundle = decorator_1.BundleDecoratorFactory(exports.ID_LOGGER);
 var LoggerLevel;
 (function (LoggerLevel) {
@@ -51,23 +64,23 @@ var LoggerLevel;
     LoggerLevel[LoggerLevel["ERROR"] = 5] = "ERROR";
 })(LoggerLevel = exports.LoggerLevel || (exports.LoggerLevel = {}));
 const LoggerLevelToLcase = {
-    [LoggerLevel.TRACE]: 'trace',
-    [LoggerLevel.DEBUG]: 'debug',
-    [LoggerLevel.INFO]: 'info',
-    [LoggerLevel.WARN]: 'warn',
-    [LoggerLevel.ERROR]: 'error',
+    [LoggerLevel.TRACE]: "trace",
+    [LoggerLevel.DEBUG]: "debug",
+    [LoggerLevel.INFO]: "info",
+    [LoggerLevel.WARN]: "warn",
+    [LoggerLevel.ERROR]: "error",
 };
 /**
  * Text labels for log levels, as `%-5s`
  */
 const LoggerLevelToUcasePadded = {
-    [LoggerLevel.TRACE]: 'TRACE',
-    [LoggerLevel.DEBUG]: 'DEBUG',
-    [LoggerLevel.INFO]: 'INFO ',
-    [LoggerLevel.WARN]: 'WARN ',
-    [LoggerLevel.ERROR]: 'ERROR ',
+    [LoggerLevel.TRACE]: "TRACE",
+    [LoggerLevel.DEBUG]: "DEBUG",
+    [LoggerLevel.INFO]: "INFO ",
+    [LoggerLevel.WARN]: "WARN ",
+    [LoggerLevel.ERROR]: "ERROR ",
 };
-exports.INTERFACE_LOG_LOGGER = 'logger.logger';
+exports.INTERFACE_LOG_LOGGER = "logger.logger";
 class LoggerWrappingWriter {
     constructor(name, writer) {
         this.name = name;
@@ -77,41 +90,41 @@ class LoggerWrappingWriter {
         this.writer.writeEvent({
             name: this.name,
             time: new Date(),
-            level: LoggerLevel.DEBUG
+            level: LoggerLevel.DEBUG,
         }, messageOrError, err, ...args);
     }
     error(messageOrError, err, ...args) {
         this.writer.writeEvent({
             name: this.name,
             time: new Date(),
-            level: LoggerLevel.ERROR
+            level: LoggerLevel.ERROR,
         }, messageOrError, err, ...args);
     }
     info(messageOrError, err, ...args) {
         this.writer.writeEvent({
             name: this.name,
             time: new Date(),
-            level: LoggerLevel.INFO
+            level: LoggerLevel.INFO,
         }, messageOrError, err, ...args);
     }
     trace(messageOrError, err, ...args) {
         this.writer.writeEvent({
             name: this.name,
             time: new Date(),
-            level: LoggerLevel.TRACE
+            level: LoggerLevel.TRACE,
         }, messageOrError, err, ...args);
     }
     warn(messageOrError, err, ...args) {
         this.writer.writeEvent({
             name: this.name,
             time: new Date(),
-            level: LoggerLevel.WARN
+            level: LoggerLevel.WARN,
         }, messageOrError, err, ...args);
     }
 }
 exports.LoggerWrappingWriter = LoggerWrappingWriter;
-exports.INTERFACE_LOG_WRITER = 'logger.writer';
-exports.INTERFACE_LOG_FORMATTER = 'logger.formatter';
+exports.INTERFACE_LOG_WRITER = "logger.writer";
+exports.INTERFACE_LOG_FORMATTER = "logger.formatter";
 let StandardEventFormatter = StandardEventFormatter_1 = class StandardEventFormatter {
     createEvent({ time, level, name }, messageOrError, err, ...args) {
         const iso = time.toISOString().substr(0, 23);
@@ -122,7 +135,9 @@ let StandardEventFormatter = StandardEventFormatter_1 = class StandardEventForma
         const buff = [];
         let restArgs = args;
         if (messageOrError instanceof Error) {
-            buff.push(`${messageOrError.message} ${JSON.stringify({ stacktrace: messageOrError.stack })}`);
+            buff.push(`${messageOrError.message} ${JSON.stringify({
+                stacktrace: messageOrError.stack,
+            })}`);
             if (err !== undefined)
                 restArgs = [err, ...args];
         }
@@ -130,7 +145,7 @@ let StandardEventFormatter = StandardEventFormatter_1 = class StandardEventForma
             buff.push(messageOrError);
             buff.push(`${err.message} ${JSON.stringify({ stacktrace: err.stack })}`);
         }
-        else if (typeof messageOrError == 'string') {
+        else if (typeof messageOrError == "string") {
             buff.push(messageOrError);
             if (err !== undefined)
                 restArgs = [err, ...args];
@@ -146,13 +161,13 @@ let StandardEventFormatter = StandardEventFormatter_1 = class StandardEventForma
                 buff.push(arg);
             }
         }
-        return buff.join(' ');
+        return buff.join(" ");
     }
 };
 StandardEventFormatter = StandardEventFormatter_1 = __decorate([
     LoggerBundle,
     decorators_1.Service("logger.formatter.standard", {
-        interfaces: [exports.INTERFACE_LOG_FORMATTER]
+        interfaces: [exports.INTERFACE_LOG_FORMATTER],
     })
 ], StandardEventFormatter);
 exports.StandardEventFormatter = StandardEventFormatter;
@@ -181,7 +196,7 @@ let LoggerWriterConsole = class LoggerWriterConsole {
         this.formatter = new StandardEventFormatter();
     }
     getMappedNames() {
-        return ['*'];
+        return ["*"];
     }
     writeEvent(context, ...args) {
         const { level } = context;
@@ -196,7 +211,7 @@ let LoggerWriterConsole = class LoggerWriterConsole {
 LoggerWriterConsole = __decorate([
     LoggerBundle,
     decorators_1.Service("logger.writer.console", {
-        interfaces: [exports.INTERFACE_LOG_WRITER]
+        interfaces: [exports.INTERFACE_LOG_WRITER],
     })
 ], LoggerWriterConsole);
 exports.LoggerWriterConsole = LoggerWriterConsole;
@@ -204,7 +219,7 @@ let LoggerFactory = LoggerFactory_1 = class LoggerFactory {
     constructor() {
         this.writers = [];
         this.prefixToWriters = {
-            '*': new LoggerWriterConsole()
+            "*": new LoggerWriterConsole(),
         };
         this.loggers = {};
     }
@@ -230,7 +245,7 @@ let LoggerFactory = LoggerFactory_1 = class LoggerFactory {
         if (this.loggers[name]) {
             return this.loggers[name];
         }
-        let p = '*';
+        let p = "*";
         for (const prefix of Object.keys(this.prefixToWriters)) {
             if (name == prefix || name.startsWith(prefix)) {
                 if (prefix.length > p.length) {
@@ -259,8 +274,8 @@ __decorate([
 ], LoggerFactory, "getSingleton", null);
 LoggerFactory = LoggerFactory_1 = __decorate([
     LoggerBundle,
-    decorators_1.Service('logger.loggerFactory', {
-        isFactory: true
+    decorators_1.Service("logger.loggerFactory", {
+        isFactory: true,
     })
 ], LoggerFactory);
 exports.LoggerFactory = LoggerFactory;

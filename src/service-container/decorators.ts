@@ -1,10 +1,11 @@
 import {
-  BaseServiceMeta, ClassServiceMetadata,
+  BaseServiceMeta,
+  ClassServiceMetadata,
   DependencyMeta,
   MethodType,
 } from "./types";
 import { getOrMakeGidForConstructor } from "../decorator/registry";
-import {DecoratedServiceRecord, getServiceMetadataBuilder} from "./utils";
+import { DecoratedServiceRecord, getServiceMetadataBuilder } from "./utils";
 
 const builder = getServiceMetadataBuilder();
 
@@ -90,7 +91,7 @@ export const Inject = (params: DependencyMeta) => {
   };
 };
 
-let finalServices: ClassServiceMetadata[]|undefined;
+let finalServices: ClassServiceMetadata[] | undefined;
 let serviceToMeta: Record<string, ClassServiceMetadata> = {};
 
 /**
@@ -120,9 +121,9 @@ export const addNewServiceMeta = (meta: ClassServiceMetadata): boolean => {
     finalServices = builder.getFinalized();
   }
 
-  const metaCopy = {...meta};
+  const metaCopy = { ...meta };
   finalServices.push(metaCopy);
   serviceToMeta[id] = metaCopy;
 
   return true;
-}
+};

@@ -1,27 +1,28 @@
-import {ServiceContainer} from "./service-container";
-import {HttpDecoratorsBinder} from "./http/binder";
+import { ServiceContainer } from "./service-container";
+import { HttpDecoratorsBinder } from "./http/binder";
 import {
   DecoratedClass,
   filterMetadataByProvider,
-  flattenManyBundlesMetadata, getBundledMetadata,
+  flattenManyBundlesMetadata,
+  getBundledMetadata,
 } from "./decorator";
-import {HandlerConfigType} from "./http/types";
+import { HandlerConfigType } from "./http/types";
 import express from "express";
 import * as http from "http";
-import {BundleActivator, BundleConfig} from "./service-container/bundle";
+import { BundleActivator, BundleConfig } from "./service-container/bundle";
 import {
   DecoratedServiceRecord,
   getAllServicesByGidMap,
   getAllServicesForBundle,
-  getAllServicesMap
+  getAllServicesMap,
 } from "./service-container/utils";
 import {
   ID_RUNTIME,
   RuntimeConfigProvider,
-  StandardConfig
+  StandardConfig,
 } from "./service-container/common/runtime";
-import {ID_LOGGER} from "./service-container/common/logging";
-import {ClassServiceMetadata} from "./service-container/types";
+import { ID_LOGGER } from "./service-container/common/logging";
+import { ClassServiceMetadata } from "./service-container/types";
 
 export class Dinoframe {
   static readonly ID_EXPRESS_APP = "express.app";
@@ -73,15 +74,20 @@ export class Dinoframe {
 
       const bundleRecs = getAllServicesForBundle(bundleId);
       if (this.bundleConfigs[bundleId]) {
-        const activator = new BundleActivator(bundleId, this.bundleConfigs[bundleId]);
+        const activator = new BundleActivator(
+          bundleId,
+          this.bundleConfigs[bundleId]
+        );
         const bundleDeps = activator.loadDependencies();
         for (const depId of bundleDeps) {
           this.bundleIds.push(depId);
         }
 
-        metaRecords = metaRecords.concat(activator.processServiceRecords(bundleRecs, getAllServicesMap()));
+        metaRecords = metaRecords.concat(
+          activator.processServiceRecords(bundleRecs, getAllServicesMap())
+        );
       } else {
-        metaRecords = metaRecords.concat(bundleRecs)
+        metaRecords = metaRecords.concat(bundleRecs);
       }
     }
 
@@ -101,7 +107,7 @@ export class Dinoframe {
     services.forEach((svc) => {
       if (svc.config) {
         // binds config to ConfigProvider as `${serviceId}@${ID_RUNTIME}.configProvider`
-        cfgProvider.addConfig(svc.id, new StandardConfig(svc.config))
+        cfgProvider.addConfig(svc.id, new StandardConfig(svc.config));
       }
       this._serviceContainer.register(svc);
     });
@@ -131,7 +137,7 @@ export class Dinoframe {
 
     const httpApp = this.getExpressApp();
     this._httpBinder.setControllers(controllers).bind((handler, rec, ctrl) => {
-      const {path, methods, type} = rec;
+      const { path, methods, type } = rec;
       const mth = methods ? methods.map((m) => m.toLowerCase()) : ["get"];
       const cname = `gid=${ctrl.gid} ${ctrl.clazz.name}`;
       switch (type) {
