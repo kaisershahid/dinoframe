@@ -4,7 +4,7 @@
 	"scripts": {
 		"test": "jest",
 		"prepack": "npx webpack",
-		"prerelease": "yarn test && tsc && prettier -w ./src",
+		"prerelease": "yarn test && prettier -w ./src && tsc",
 		"release": "source release.sh"
 	},
 	"description": "a flexible, decorator-driven framework for building and managing complex apps",
