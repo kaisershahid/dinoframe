@@ -1,4 +1,5 @@
-import { DecoratedServiceRecord, DependencyMeta, InjectableList, Container, ServiceRecord, ServiceState, FactoryContainer } from "./types";
+import { DependencyMeta, InjectableList, Container, ServiceRecord, ServiceState, FactoryContainer } from "./types";
+import { DecoratedServiceRecord } from "./utils";
 export declare const PROVIDER_ID = "service-container";
 /**
  * Keeps track of an individual service's dependencies. Await `ServiceTracker.promise` to
@@ -56,6 +57,7 @@ export declare class ServiceContainer implements Container {
     private depTracker;
     private factoryHelper;
     private logger;
+    private interfaceSubscribers;
     constructor(initialRecords?: DecoratedServiceRecord[]);
     has(id: string): boolean;
     hasGid(gid: string): boolean;
@@ -69,7 +71,9 @@ export declare class ServiceContainer implements Container {
     startup(): Promise<Container>;
     protected initServiceFromRecord(rec: ServiceRecord): Promise<any>;
     private waitOnDependencies;
+    private registerInterfaceSubscriptions;
     private wakeUpDependents;
+    private notifyInterfacesAvailable;
     shutdown(): Promise<Container>;
     protected makeInstance(rec: ServiceRecord): any;
     protected processInjections(rec: ServiceRecord, inst: any): void;

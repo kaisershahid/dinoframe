@@ -1,4 +1,5 @@
-import { BaseServiceMeta, DecoratedServiceRecord, DependencyMeta } from "./types";
+import { BaseServiceMeta, DependencyMeta } from "./types";
+import { DecoratedServiceRecord } from "./utils";
 /**
  * Class -- marks the class as a singleton service. If `isFactory` is true, service is treated as
  * a sub-service factory. Don't confuse with `@Factory`.
@@ -30,3 +31,8 @@ export declare const Inject: (params: DependencyMeta) => (target: any, name: str
  * Returns ALL processed @Service as DecoratedServiceRecord instances
  */
 export declare const getDecoratedServiceRecords: () => DecoratedServiceRecord[];
+/**
+ * Registers new new through a ClassServiceMetadata object. @Service.id must
+ * be unique.
+ */
+export declare const addNewServiceMeta: (meta: import("../decorator").DecoratedClass<import("./types").ServiceMeta, import("./types").MethodInvoker, DependencyMeta, any>) => boolean;

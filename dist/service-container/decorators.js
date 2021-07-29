@@ -2,7 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const types_1 = require("./types");
 const registry_1 = require("../decorator/registry");
-const builder = types_1.getServiceMetadataBuilder();
+const utils_1 = require("./utils");
+const builder = utils_1.getServiceMetadataBuilder();
 /**
  * Class -- marks the class as a singleton service. If `isFactory` is true, service is treated as
  * a sub-service factory. Don't confuse with `@Factory`.
@@ -48,12 +49,34 @@ exports.Inject = (params) => {
         builder.pushParameter(target, name, pos, { ...params }, "Inject");
     };
 };
+let finalServices;
+let serviceToMeta = {};
 /**
  * Returns ALL processed @Service as DecoratedServiceRecord instances
  */
 exports.getDecoratedServiceRecords = () => {
-    return builder.getFinalized().map((meta) => {
-        return new types_1.DecoratedServiceRecord(meta);
+    if (!finalServices) {
+        finalServices = builder.getFinalized();
+    }
+    return finalServices.map((meta) => {
+        return new utils_1.DecoratedServiceRecord(meta);
     });
+};
+/**
+ * Registers new new through a ClassServiceMetadata object. @Service.id must
+ * be unique.
+ */
+exports.addNewServiceMeta = (meta) => {
+    const id = meta.metadata[0].id;
+    if (serviceToMeta[id]) {
+        return false;
+    }
+    if (!finalServices) {
+        finalServices = builder.getFinalized();
+    }
+    const metaCopy = { ...meta };
+    finalServices.push(metaCopy);
+    serviceToMeta[id] = metaCopy;
+    return true;
 };
 //# sourceMappingURL=decorators.js.map

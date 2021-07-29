@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const decorator_1 = require("../decorator");
 /**
  * These are the standard priorities used to organize startup. Note that priorities don't absolutely
  * guarantee starting before lower priorities -- if a higher priority service has to wait on a lower
@@ -36,82 +35,4 @@ var MethodType;
     MethodType[MethodType["factory"] = 3] = "factory";
     MethodType[MethodType["injectable"] = 4] = "injectable";
 })(MethodType = exports.MethodType || (exports.MethodType = {}));
-exports.getServiceMetadataBuilder = () => {
-    return new decorator_1.DecoratedClassBuilder("service-container");
-};
-/**
- * Normalizes DecoratedClass metadata.
- */
-class DecoratedServiceRecord {
-    constructor(classMeta) {
-        var _a, _b;
-        this.id = "";
-        this.gid = "";
-        this.priority = 0;
-        this.interfaces = [];
-        this.status = ServiceState.registered;
-        this.factory = "";
-        this.injectableFactory = [];
-        this.activator = "";
-        this.deactivator = "";
-        this.dependencies = {};
-        this.injectableMethods = {};
-        if (classMeta.metadata.length != 1) {
-            throw new Error(`expected exactly 1 decoration, got: ${classMeta.metadata.length}`);
-        }
-        this.provider = classMeta._provider;
-        this.id = classMeta.metadata[0].id;
-        this.gid = classMeta.metadata[0].gid;
-        this.isDisabled = classMeta.metadata[0].disabled;
-        this.isFactory = classMeta.metadata[0].isFactory;
-        const ic = classMeta.metadata[0].injectConfig;
-        if (ic) {
-            this.injectConfig = ic === true ? `config/${this.id}` : ic;
-            this.dependencies[this.injectConfig] = {};
-        }
-        this.clazz = classMeta.clazz;
-        this.priority = (_a = classMeta.metadata[0].priority) !== null && _a !== void 0 ? _a : 0;
-        this.interfaces = (_b = classMeta.metadata[0].interfaces) !== null && _b !== void 0 ? _b : [];
-        // @todo process explicit deps
-        this.processMethods(classMeta.methods);
-        this.processMethods(classMeta.staticMethods, true);
-    }
-    processMethods(methods, isStatic = false) {
-        var _a;
-        for (const methodName of Object.keys(methods)) {
-            const mrec = methods[methodName];
-            const params = mrec.parameters.map((params) => {
-                var _a;
-                if (params) {
-                    if (params[0].id) {
-                        this.dependencies[params[0].id] = {};
-                    }
-                    if (params[0].matchInterface) {
-                        this.dependencies["#" + params[0].matchInterface] = (_a = params[0]
-                            .matchCriteria) !== null && _a !== void 0 ? _a : { min: 1 };
-                    }
-                    return params[0];
-                }
-                return undefined;
-            });
-            // regular setter methods have no metadata on method, only params
-            switch ((_a = mrec.metadata[0]) === null || _a === void 0 ? void 0 : _a.type) {
-                case MethodType.activate:
-                    this.activator = methodName;
-                    break;
-                case MethodType.deactivate:
-                    this.deactivator = methodName;
-                    break;
-                case MethodType.factory:
-                    // expecting 1 injectable decorator per param
-                    this.factory = methodName;
-                    this.injectableFactory = params;
-                    break;
-                default:
-                    this.injectableMethods[methodName] = params;
-            }
-        }
-    }
-}
-exports.DecoratedServiceRecord = DecoratedServiceRecord;
 //# sourceMappingURL=types.js.map

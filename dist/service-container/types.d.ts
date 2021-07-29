@@ -1,4 +1,5 @@
-import { DecoratedClass, DecoratedClassBuilder } from "../decorator";
+import { DecoratedClass } from "../decorator";
+import { DecoratedServiceRecord } from "./utils";
 /**
  * These are the standard priorities used to organize startup. Note that priorities don't absolutely
  * guarantee starting before lower priorities -- if a higher priority service has to wait on a lower
@@ -29,7 +30,14 @@ export declare type BaseServiceMeta = {
      * first parameter in the constructor OR the first parameter in @Factory method.
      */
     injectConfig?: boolean | string;
+    /**
+     * If defined, automatically generates a config meta-service with an id based on injectConfig.
+     * Good for defaults. Auto-generated configs are set at default priority.
+     * @todo implement
+     */
+    config?: Record<string, any>;
     isFactory?: boolean;
+    subscribeToInterfaces?: string[];
 };
 export declare type ServiceMeta = BaseServiceMeta & {
     id: string;
@@ -43,15 +51,20 @@ export declare enum ServiceState {
     deactivated = 30
 }
 export declare type InjectableList = (DependencyMeta | undefined)[];
+export interface InterfaceAvailableListener {
+    onAvailableInterface(_interface: string, services: any[]): any;
+}
 export declare type ServiceRecord = {
+    provider: string;
     id: string;
     gid: string;
-    disabled?: boolean;
+    isDisabled?: boolean;
     priority: number;
     interfaces: string[];
     clazz: any;
     isFactory?: boolean;
     injectConfig?: string;
+    config?: Record<string, any>;
     status: ServiceState;
     factory: string;
     injectableFactory: InjectableList;
@@ -59,6 +72,7 @@ export declare type ServiceRecord = {
     deactivator: string;
     dependencies: Record<string, any>;
     injectableMethods: Record<string, InjectableList>;
+    subscribeToInterfaces: string[];
 };
 export declare enum MethodType {
     activate = 1,
@@ -83,33 +97,7 @@ export declare type DependencyMeta = {
         min?: number;
     };
 };
-export declare type ServiceProviderMeta = {};
-export declare type ScopedFactoryServiceMeta = {};
 export declare type ClassServiceMetadata = DecoratedClass<ServiceMeta, MethodInvoker, DependencyMeta>;
-export declare const getServiceMetadataBuilder: () => DecoratedClassBuilder<ServiceMeta, MethodInvoker, DependencyMeta, any>;
-/**
- * Normalizes DecoratedClass metadata.
- */
-export declare class DecoratedServiceRecord implements ServiceRecord {
-    provider: string;
-    id: string;
-    gid: string;
-    priority: number;
-    clazz: any;
-    isDisabled?: boolean;
-    isFactory?: boolean;
-    injectConfig?: string;
-    interfaces: string[];
-    status: ServiceState;
-    factory: string;
-    injectableFactory: InjectableList;
-    activator: string;
-    deactivator: string;
-    dependencies: Record<string, DependencyMeta["matchCriteria"]>;
-    injectableMethods: Record<string, InjectableList>;
-    constructor(classMeta: ClassServiceMetadata);
-    private processMethods;
-}
 export interface Container {
     /** Checks if a service has been registered. */
     has(id: string): boolean;
