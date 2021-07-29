@@ -230,7 +230,9 @@ export class ServiceContainer implements Container {
   }
 
   has(id: string) {
-    if (id.includes("@")) {
+    if (!id) {
+      return false;
+    } else if (id.includes("@")) {
       return this.factoryHelper.has(id);
     }
 

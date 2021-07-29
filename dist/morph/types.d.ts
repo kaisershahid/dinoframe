@@ -70,11 +70,11 @@ export declare type PropertyParams = {
      * value to the given class constructor.
      * @future 'object'
      */
-    type?: 'boolean' | 'string' | 'number' | 'enum' | Function;
+    type?: "boolean" | "string" | "number" | "enum" | Function;
     /**
      * If defined, either allows array or scalar ('mixed') or strictly array ('strict')
      */
-    listType?: 'mixed' | 'strict';
+    listType?: "mixed" | "strict";
     /**
      * For enum type, the list of allowed values.
      */

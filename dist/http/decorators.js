@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getHttpAnnotations = exports.RequestParam = exports.ErrorMiddleware = exports.Middleware = exports.Route = exports.isParameterEmpty = exports.Controller = void 0;
 const decorator_1 = require("../decorator");
 const types_1 = require("./types");
 const collector = new decorator_1.DecoratedClassBuilder("dinoframe.http");

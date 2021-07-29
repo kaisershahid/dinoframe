@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RegistryGidAccessor = exports.getGid = exports.hasGidAccessor = exports.swapConstructorWithSubclass = exports.getConstructorForGid = exports.wasLastClass = exports.isSameGid = exports.getLastGid = exports.getOrMakeGidForConstructor = exports.findGidForConstructor = void 0;
 /**
  * The decorator registry provides a consistent way to get a unique identifier
  * for the class currently being processed. You  can also get the gid of any
@@ -24,8 +25,8 @@ exports.findGidForConstructor = (t) => {
     if (isClass) {
         o = t.prototype;
     }
-    let gidT = '';
-    let gidO = '';
+    let gidT = "";
+    let gidO = "";
     for (let i = 0; i < prototypeOrder.length; i++) {
         if (prototypeOrder[i] === o) {
             gidO = `${i + 1}`;
@@ -36,7 +37,7 @@ exports.findGidForConstructor = (t) => {
     }
     // indicates class t is a subclass of gidO, so return ''
     if (!gidT && gidO) {
-        return '';
+        return "";
     }
     else if (gidO) {
         return gidO;
@@ -123,7 +124,7 @@ exports.swapConstructorWithSubclass = (subclass) => {
         prototypeRegistry[lastGid] = subclass;
     }
 };
-exports.hasGidAccessor = (o) => typeof (o === null || o === void 0 ? void 0 : o.getDecoratorGid) === "function" || typeof (o === null || o === void 0 ? void 0 : o.___gid) === 'string';
+exports.hasGidAccessor = (o) => typeof (o === null || o === void 0 ? void 0 : o.getDecoratorGid) === "function" || typeof (o === null || o === void 0 ? void 0 : o.___gid) === "string";
 /**
  * Gets the gid of what's assumed to be a class. If `getDecoratorGid()` exists, that value will be
  * returned, otherwise, the class will be

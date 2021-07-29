@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getMorpherById = exports.getMorphManager = exports.getMorpherDefByGid = exports.getMorpherDefinitions = exports.Deserialize = exports.Serialize = exports.Finalize = exports.PropertyGet = exports.PropertySet = exports.Property = exports.Morph = void 0;
 const types_1 = require("./types");
 const index_1 = require("./index");
 const registry_1 = require("../decorator/registry");
@@ -20,7 +21,7 @@ exports.Morph = (params = {}) => {
             target.___discriminatorCol = discriminatorCol;
             target.___discriminatorMap = {};
         }
-        builder.pushClass(target, { ...params }, 'Morph');
+        builder.pushClass(target, { ...params }, "Morph");
         if (((_a = params.inherits) === null || _a === void 0 ? void 0 : _a.discriminatorValue) && !params.discriminator) {
             // populate static map of parent
             const parent = params.inherits.baseClass;
@@ -43,10 +44,11 @@ exports.Morph = (params = {}) => {
  */
 exports.Property = (params = {}) => {
     return (target, name) => {
-        if (params.type == 'enum' && (!params.enumValues || params.enumValues.length == 0)) {
+        if (params.type == "enum" &&
+            (!params.enumValues || params.enumValues.length == 0)) {
             throw new types_1.MorphError(`${target}: type set as 'enum' but enumValues is missing/empty`);
         }
-        builder.pushProperty(target, name, { name, ...params, propertyName: name }, 'Property');
+        builder.pushProperty(target, name, { name, ...params, propertyName: name }, "Property");
     };
 };
 /**
@@ -54,7 +56,7 @@ exports.Property = (params = {}) => {
  */
 exports.PropertySet = (name) => {
     return (target, methodName, desc) => {
-        builder.pushMethod(target, methodName, { name, setter: methodName }, 'PropertySet');
+        builder.pushMethod(target, methodName, { name, setter: methodName }, "PropertySet");
     };
 };
 /**
@@ -62,7 +64,7 @@ exports.PropertySet = (name) => {
  */
 exports.PropertyGet = (name) => {
     return (target, methodName, desc) => {
-        builder.pushMethod(target, methodName, { name, getter: methodName }, 'PropertyGet');
+        builder.pushMethod(target, methodName, { name, getter: methodName }, "PropertyGet");
     };
 };
 /**
@@ -71,21 +73,21 @@ exports.PropertyGet = (name) => {
  * `ObjectError`
  */
 exports.Finalize = (target, methodName, desc) => {
-    builder.pushMethod(target, methodName, { finalize: methodName }, 'Finalize');
+    builder.pushMethod(target, methodName, { finalize: methodName }, "Finalize");
 };
 /**
  * Method -- if defined, defers all serialization to this method and should have the signature
  * `(morphManager?: MorpherManager<any>)`.
  */
 exports.Serialize = (target, methodName, desc) => {
-    builder.pushMethod(target, methodName, { serialize: methodName }, 'Serialize');
+    builder.pushMethod(target, methodName, { serialize: methodName }, "Serialize");
 };
 /**
  * Method -- if defined, defers all deserialization to this method and should have the signature
  * `(source: any, morphManager?: MorpherManager<any>)`.
  */
 exports.Deserialize = (target, methodName, desc) => {
-    builder.pushMethod(target, methodName, { deserialize: methodName }, 'Deserialize');
+    builder.pushMethod(target, methodName, { deserialize: methodName }, "Deserialize");
 };
 exports.getMorpherDefinitions = () => {
     return builder.getFinalized().map(lodash_clonedeep_1.default);
@@ -94,7 +96,7 @@ exports.getMorpherDefByGid = (clazzOrGid) => {
     if (!clazzOrGid) {
         return;
     }
-    const gid = typeof clazzOrGid == 'string' ? clazzOrGid : registry_1.getGid(clazzOrGid);
+    const gid = typeof clazzOrGid == "string" ? clazzOrGid : registry_1.getGid(clazzOrGid);
     return lodash_clonedeep_1.default(builder.getByGid(gid));
 };
 let morphManager = null;

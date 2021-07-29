@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ServiceContainer = exports.ServiceFactoryHelper = exports.DependencyTracker = exports.canDeactivateService = exports.canActivateService = exports.ServiceTracker = exports.PROVIDER_ID = void 0;
 const types_1 = require("./types");
 const logging_1 = require("./common/logging");
 exports.PROVIDER_ID = "service-container";
@@ -11,10 +12,8 @@ class ServiceTracker {
     constructor(id) {
         this.depServices = {};
         this.depInterfaces = {};
-        this.resolve = (v) => {
-        };
-        this.reject = (v) => {
-        };
+        this.resolve = (v) => { };
+        this.reject = (v) => { };
         this.id = id;
         this.promise = new Promise((res, rej) => {
             this.resolve = res;
@@ -183,7 +182,10 @@ class ServiceContainer {
         this.logger = logger;
     }
     has(id) {
-        if (id.includes("@")) {
+        if (!id) {
+            return false;
+        }
+        else if (id.includes("@")) {
             return this.factoryHelper.has(id);
         }
         return this.instances[id] !== undefined;
@@ -258,7 +260,8 @@ class ServiceContainer {
             if (rec.isDisabled || !exports.canActivateService(rec.status)) {
                 continue;
             }
-            promises.push(this.initServiceFromRecord(rec).then((inst) => {
+            promises.push(this.initServiceFromRecord(rec)
+                .then((inst) => {
                 rec.status = types_1.ServiceState.activated;
                 this.logger.info(`! startup: ${rec.id} AVAILABLE`);
                 const notifyServices = this.depTracker.serviceAvailable(rec.id);
@@ -271,9 +274,10 @@ class ServiceContainer {
                     .reduce((a, b) => a.concat(b), []);
                 this.registerInterfaceSubscriptions(rec.id, inst, rec.subscribeToInterfaces);
                 this.wakeUpDependents(notifyServices.concat(notifyInterfaces));
-                console.log('🥁 ', rec.id, rec.interfaces);
+                console.log("🥁 ", rec.id, rec.interfaces);
                 this.notifyInterfacesAvailable(inst, notifyInterfaces);
-            }).catch((e) => {
+            })
+                .catch((e) => {
                 this.logger.error(e);
             }));
         }
@@ -296,7 +300,7 @@ class ServiceContainer {
     }
     async waitOnDependencies(rec, tracker) {
         const deps = Object.keys(rec.dependencies);
-        this.logger.info(`waitOnDependencies: ${rec.id} ->`, deps.length > 1 ? deps : 'NO_DEPS');
+        this.logger.info(`waitOnDependencies: ${rec.id} ->`, deps.length > 1 ? deps : "NO_DEPS");
         for (const dep of deps) {
             if (dep.startsWith("#")) {
                 const interfaze = dep.substring(1);
@@ -345,7 +349,7 @@ class ServiceContainer {
                 continue;
             }
             for (const svcId in this.interfaceSubscribers[_interface]) {
-                console.log('<<<', svcId, _interface);
+                console.log("<<<", svcId, _interface);
                 try {
                     this.interfaceSubscribers[_interface][svcId].onAvailableInterface(_interface, [inst]);
                 }
@@ -439,12 +443,14 @@ class ServiceContainer {
         const recById = {};
         // fifo for serviceIds to check. build up with initial services, then for each set of services
         // to notify, add to queue
-        let recIds = Object.values(records).map((rec, idx) => {
+        let recIds = Object.values(records)
+            .map((rec, idx) => {
             if (rec.id) {
                 recById[rec.id] = idx;
             }
             return rec.id;
-        }).filter(id => id !== undefined);
+        })
+            .filter((id) => id !== undefined);
         while (recIds.length > 0) {
             const recId = recIds.shift();
             const rec = records[recById[recId]];
@@ -460,7 +466,7 @@ class ServiceContainer {
                 if ((depMeta === null || depMeta === void 0 ? void 0 : depMeta.min) === 0) {
                     continue;
                 }
-                let [subId, factoryId] = dep.split('@');
+                let [subId, factoryId] = dep.split("@");
                 let depId = factoryId ? factoryId : dep;
                 if (!depTrack.serviceMap[depId]) {
                     depTrack.waitOnService(depId, rec.id);
@@ -493,8 +499,12 @@ class ServiceContainer {
             const st = depTrack.serviceTrackers[recId];
             const rec = {
                 id: recId,
-                status: records[recById[recId]].isDisabled ? 'DISABLED' : (st.isResolved() ? 'RESOLVED' : 'UNRESOLVED'),
-                unresolvedDeps: Object.keys(st.depServices).concat(Object.keys(st.depInterfaces).map(i => `#${i}`))
+                status: records[recById[recId]].isDisabled
+                    ? "DISABLED"
+                    : st.isResolved()
+                        ? "RESOLVED"
+                        : "UNRESOLVED",
+                unresolvedDeps: Object.keys(st.depServices).concat(Object.keys(st.depInterfaces).map((i) => `#${i}`)),
             };
             status.push(rec);
         }

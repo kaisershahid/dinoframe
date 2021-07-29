@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BundleActivator = void 0;
 const utils_1 = require("../utils");
 class BundleActivator {
     constructor(id, config) {
@@ -11,7 +12,7 @@ class BundleActivator {
         const bundleDeps = (_a = this.config.bundleDependencies) !== null && _a !== void 0 ? _a : [];
         const modDeps = (_b = this.config.moduleDependencies) !== null && _b !== void 0 ? _b : [];
         for (let modDep of modDeps) {
-            const [mod, clazz] = modDep.split(':');
+            const [mod, clazz] = modDep.split(":");
             // @todo log:debug
             let imp = require(mod);
             if (clazz) {
@@ -47,7 +48,10 @@ class BundleActivator {
                 let injectConfig;
                 if (config) {
                     injectConfig = utils_1.makeConfigId(rec.id);
-                    config = { ...((_c = rec.originalMeta.metadata[0].config) !== null && _c !== void 0 ? _c : {}), ...config };
+                    config = {
+                        ...((_c = rec.originalMeta.metadata[0].config) !== null && _c !== void 0 ? _c : {}),
+                        ...config,
+                    };
                 }
                 overrides.injectConfig = injectConfig;
                 recsById[rec.id] = rec.clone({
@@ -55,7 +59,7 @@ class BundleActivator {
                     gid: rec.gid,
                     ...overrides,
                     config: conf.config,
-                    disabled: conf.disabled
+                    disabled: conf.disabled,
                 });
             }
         }
@@ -71,17 +75,20 @@ class BundleActivator {
                 let injectConfig;
                 if (config) {
                     injectConfig = utils_1.makeConfigId(svcId);
-                    config = { ...((_e = recsById[conf.id].originalMeta.metadata[0].config) !== null && _e !== void 0 ? _e : {}), ...config };
+                    config = {
+                        ...((_e = recsById[conf.id].originalMeta.metadata[0].config) !== null && _e !== void 0 ? _e : {}),
+                        ...config,
+                    };
                 }
                 overrides.injectConfig = injectConfig;
                 // @todo duplicate all decorators for gid -> newGid
                 // @todo clone with clazz, and pass to cloneAndRegisterNewService()
                 recsById[svcId] = recsById[conf.id].cloneAndRegisterNewService(svcId, {
                     id: svcId,
-                    gid: '',
+                    gid: "",
                     ...overrides,
                     config,
-                    disabled: conf.disabled
+                    disabled: conf.disabled,
                 });
             }
         }

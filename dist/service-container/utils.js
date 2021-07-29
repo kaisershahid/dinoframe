@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.extractConfigSubId = exports.makeConfigId = exports.cloneServiceRecord = exports.getServiceMetadataBuilder = exports.getAllServicesForBundle = exports.getAllServicesByGidMap = exports.getAllServicesMap = exports.DecoratedServiceRecord = void 0;
 const types_1 = require("./types");
 const decorator_1 = require("../decorator");
 const decorators_1 = require("./decorators");
@@ -13,11 +14,11 @@ const registry_1 = require("../decorator/registry");
  */
 class DecoratedServiceRecord {
     constructor(classMeta) {
-        this.provider = '';
+        this.provider = "";
         this.id = "";
         this.gid = "";
         this.priority = 0;
-        this.injectConfig = '';
+        this.injectConfig = "";
         this.interfaces = [];
         this.status = types_1.ServiceState.registered;
         this.factory = "";
@@ -186,7 +187,7 @@ exports.cloneServiceRecord = (rec) => {
         deactivator: rec.deactivator,
         dependencies: { ...rec.dependencies },
         injectableMethods: { ...rec.injectableMethods },
-        subscribeToInterfaces: [...rec.subscribeToInterfaces]
+        subscribeToInterfaces: [...rec.subscribeToInterfaces],
     };
 };
 /**
@@ -199,7 +200,7 @@ exports.makeConfigId = (subId) => `${subId}@runtime.configProvider`;
  * Returns the subId or undefined from a service reference of the form `subId@runtime.configProvider`.
  */
 exports.extractConfigSubId = (configId) => {
-    const [s1, s2] = configId.split('@runtime.configProvider');
+    const [s1, s2] = configId.split("@runtime.configProvider");
     return s2 === undefined ? undefined : s1;
 };
 //# sourceMappingURL=utils.js.map

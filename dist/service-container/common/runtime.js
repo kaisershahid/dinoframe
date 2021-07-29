@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 var RuntimeConfigProvider_1;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RuntimeConfigProvider = exports.INTERFACE_CONFIG_INSTANCE = exports.CONFIG_PROVIDER_SUFFIX = exports.discover = exports.DefaultRuntimeEnv = exports.INTERFACE_ENV = exports.StandardConfigWithId = exports.StandardConfig = exports.ID_RUNTIME = void 0;
 const decorator_1 = require("../../decorator");
 const decorators_1 = require("../decorators");
 const types_1 = require("../types");
@@ -115,12 +116,15 @@ let RuntimeConfigProvider = RuntimeConfigProvider_1 = class RuntimeConfigProvide
         }
     }
     setConfigs(configs) {
-        this.onAvailableInterface('', configs);
+        this.onAvailableInterface("", configs);
     }
 };
 RuntimeConfigProvider.singleton = new RuntimeConfigProvider_1();
 __decorate([
-    __param(0, decorators_1.Inject({ matchInterface: exports.INTERFACE_CONFIG_INSTANCE, matchCriteria: { min: 0 } }))
+    __param(0, decorators_1.Inject({
+        matchInterface: exports.INTERFACE_CONFIG_INSTANCE,
+        matchCriteria: { min: 0 },
+    }))
 ], RuntimeConfigProvider.prototype, "setConfigs", null);
 __decorate([
     decorators_1.Factory
@@ -130,7 +134,7 @@ RuntimeConfigProvider = RuntimeConfigProvider_1 = __decorate([
     decorators_1.Service(`${exports.ID_RUNTIME}.${exports.CONFIG_PROVIDER_SUFFIX}`, {
         isFactory: true,
         priority: types_1.ContainerPhases.bootstrap,
-        subscribeToInterfaces: [exports.INTERFACE_CONFIG_INSTANCE]
+        subscribeToInterfaces: [exports.INTERFACE_CONFIG_INSTANCE],
     })
 ], RuntimeConfigProvider);
 exports.RuntimeConfigProvider = RuntimeConfigProvider;

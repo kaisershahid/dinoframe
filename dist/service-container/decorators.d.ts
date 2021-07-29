@@ -1,4 +1,4 @@
-import { BaseServiceMeta, DependencyMeta } from "./types";
+import { BaseServiceMeta, ClassServiceMetadata, DependencyMeta } from "./types";
 import { DecoratedServiceRecord } from "./utils";
 /**
  * Class -- marks the class as a singleton service. If `isFactory` is true, service is treated as
@@ -35,4 +35,4 @@ export declare const getDecoratedServiceRecords: () => DecoratedServiceRecord[];
  * Registers new new through a ClassServiceMetadata object. @Service.id must
  * be unique.
  */
-export declare const addNewServiceMeta: (meta: import("../decorator").DecoratedClass<import("./types").ServiceMeta, import("./types").MethodInvoker, DependencyMeta, any>) => boolean;
+export declare const addNewServiceMeta: (meta: ClassServiceMetadata) => boolean;

@@ -1,13 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.BasicMorpherManager = exports.ValueFactory = exports.MorphMarshaller = exports.NAME_CATCH_ALL = void 0;
 const types_1 = require("./types");
 const registry_1 = require("../decorator/registry");
-exports.NAME_CATCH_ALL = '*';
+exports.NAME_CATCH_ALL = "*";
 class MorphMarshaller {
     constructor(decoratedMeta, manager) {
         var _a, _b;
         this.propertyDefs = {};
-        this.discriminatorCol = '';
+        this.discriminatorCol = "";
         this.subclasses = {};
         this.ignoreProps = [];
         this.manager = manager;
@@ -16,7 +17,8 @@ class MorphMarshaller {
         const morphMeta = decoratedMeta.metadata[0];
         this.ignoreProps = (_a = morphMeta.ignoreProps) !== null && _a !== void 0 ? _a : [];
         // a base class without discriminatorValue means we apply parent's decorators too
-        if (((_b = morphMeta.inherits) === null || _b === void 0 ? void 0 : _b.baseClass) && !morphMeta.inherits.discriminatorValue) {
+        if (((_b = morphMeta.inherits) === null || _b === void 0 ? void 0 : _b.baseClass) &&
+            !morphMeta.inherits.discriminatorValue) {
             this.baseClass = morphMeta.inherits.baseClass;
         }
         if (this.clazz.___discriminatorMap) {
@@ -89,13 +91,13 @@ class MorphMarshaller {
         // assumes name key not present, so skip (but check required first)
         if (val === undefined || val === null) {
             if (def.required) {
-                errors[name] = { message: 'required' };
+                errors[name] = { message: "required" };
             }
             return;
         }
-        if (typeof def.type == 'function') {
+        if (typeof def.type == "function") {
             if (val instanceof Array) {
-                val = val.map(v => this.deserializeNested(v, def.type));
+                val = val.map((v) => this.deserializeNested(v, def.type));
             }
             else {
                 val = this.deserializeNested(val, def.type);
@@ -127,8 +129,8 @@ class MorphMarshaller {
                 }
             }
             else if (def.required) {
-                if (val === '' || val === null) {
-                    errors[name] = { message: 'required' };
+                if (val === "" || val === null) {
+                    errors[name] = { message: "required" };
                     return;
                 }
             }
@@ -218,9 +220,9 @@ class MorphMarshaller {
             else if (def.propertyName) {
                 val = source[def.propertyName];
             }
-            if (typeof def.type == 'function') {
+            if (typeof def.type == "function") {
                 if (val instanceof Array) {
-                    val = val.map(v => this.serializeNested(v, def.type));
+                    val = val.map((v) => this.serializeNested(v, def.type));
                 }
                 else {
                     val = this.serializeNested(val, def.type);
@@ -302,7 +304,7 @@ class MorphMarshaller {
 exports.MorphMarshaller = MorphMarshaller;
 class ValueFactory {
     static validateValue(val, def) {
-        if (def.listType == 'strict' && !(val instanceof Array)) {
+        if (def.listType == "strict" && !(val instanceof Array)) {
             throw new types_1.FieldError(`listType=strict, ${typeof val} given`);
         }
         if (val instanceof Array) {
@@ -331,24 +333,24 @@ class ValueFactory {
     static assertProperType(val, def) {
         var _a, _b;
         switch (def.type) {
-            case 'boolean':
-                if (typeof val != 'boolean') {
+            case "boolean":
+                if (typeof val != "boolean") {
                     throw new types_1.FieldError(`not a boolean: ${JSON.stringify(val)}`);
                 }
                 break;
-            case 'string':
-                if (typeof val != 'string') {
+            case "string":
+                if (typeof val != "string") {
                     throw new types_1.FieldError(`not a string: ${JSON.stringify(val)}`);
                 }
                 break;
-            case 'number':
-                if (typeof val != 'number') {
+            case "number":
+                if (typeof val != "number") {
                     throw new types_1.FieldError(`not a number: ${JSON.stringify(val)}`);
                 }
                 break;
             case "enum":
                 if (!((_a = def.enumValues) === null || _a === void 0 ? void 0 : _a.includes(val))) {
-                    throw new types_1.FieldError(`${val} does not match any enum values: [${(_b = def.enumValues) === null || _b === void 0 ? void 0 : _b.join('; ')}]`);
+                    throw new types_1.FieldError(`${val} does not match any enum values: [${(_b = def.enumValues) === null || _b === void 0 ? void 0 : _b.join("; ")}]`);
                 }
                 break;
         }
@@ -366,7 +368,7 @@ class BasicMorpherManager {
         if (!clazzOrId) {
             return;
         }
-        const gid = typeof clazzOrId == 'string' ? clazzOrId : registry_1.getGid(clazzOrId);
+        const gid = typeof clazzOrId == "string" ? clazzOrId : registry_1.getGid(clazzOrId);
         return this.morphers[gid];
     }
     deserializeTo(source, clazz) {
