@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BasicMorpherManager = exports.ValueFactory = exports.MorphMarshaller = exports.NAME_CATCH_ALL = void 0;
 const types_1 = require("./types");
 const registry_1 = require("../decorator/registry");
 exports.NAME_CATCH_ALL = "*";

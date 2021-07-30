@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Dinoframe = void 0;
 const service_container_1 = require("./service-container");
 const binder_1 = require("./http/binder");
 const decorator_1 = require("./decorator");

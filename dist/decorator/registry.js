@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RegistryGidAccessor = exports.getGid = exports.hasGidAccessor = exports.swapConstructorWithSubclass = exports.getConstructorForGid = exports.wasLastClass = exports.isSameGid = exports.getLastGid = exports.getOrMakeGidForConstructor = exports.findGidForConstructor = void 0;
 /**
  * The decorator registry provides a consistent way to get a unique identifier
  * for the class currently being processed. You  can also get the gid of any

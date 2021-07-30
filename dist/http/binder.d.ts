@@ -1,3 +1,4 @@
+/// <reference types="qs" />
 import { ErrorRequestHandler, Request, RequestHandler, Response } from "express";
 import { DecoratedClass, DecoratedMethod } from "../decorator";
 import { ControllerConfig, HandlerConfig, InjectedRequestParam, RequestParamConfig } from "./types";
@@ -20,7 +21,7 @@ export declare type BoundHandlerPrecondition = (request: Request, response: Resp
  * transformer is defined, apply to value. First 3 args are ignored since
  * they're expected to be request handler args.
  */
-export declare const extractParametersAsArgsFromRequest: (request: Request, response: Response, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => any[];
+export declare const extractParametersAsArgsFromRequest: (request: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, response: Response<any, Record<string, any>>, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => any[];
 /**
  * Performs the following constraints on each argument:
  *
@@ -28,7 +29,7 @@ export declare const extractParametersAsArgsFromRequest: (request: Request, resp
  * - if validator defined and fails, throw error
  * - if enumValues set and fails, throw error
  */
-export declare const assertArgsAreValid: (args: any[], request: Request, response: Response, route: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => void;
+export declare const assertArgsAreValid: (args: any[], request: Request<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>, response: Response<any, Record<string, any>>, route: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => void;
 /**
  * Proxies request objects to `thisCtx.methodName`, extracting and validating any annotated args. Precondition allows
  * scoped request assertions (e.g. only allowing specific headers). Runtime exceptions are piped through `next()`.
@@ -38,8 +39,8 @@ export declare const assertArgsAreValid: (args: any[], request: Request, respons
  * @param handlerConfig Aggregated method decorations
  * @param precondition
  */
-export declare const makeRequestHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>, precondition?: BoundHandlerPrecondition | undefined) => RequestHandler;
-export declare const makeErrorHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => ErrorRequestHandler;
+export declare const makeRequestHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>, precondition?: BoundHandlerPrecondition | undefined) => RequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
+export declare const makeErrorHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => ErrorRequestHandler<import("express-serve-static-core").ParamsDictionary, any, any, import("qs").ParsedQs, Record<string, any>>;
 /**
  * Takes set of HTTP annotations and attempts to:
  *

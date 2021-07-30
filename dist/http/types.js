@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RequestParamError = exports.HandlerConfigType = void 0;
 var HandlerConfigType;
 (function (HandlerConfigType) {
     HandlerConfigType[HandlerConfigType["route"] = 1] = "route";

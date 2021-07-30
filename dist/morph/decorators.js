@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMorpherById = exports.getMorphManager = exports.getMorpherDefByGid = exports.getMorpherDefinitions = exports.Deserialize = exports.Serialize = exports.Finalize = exports.PropertyGet = exports.PropertySet = exports.Property = exports.Morph = void 0;
 const types_1 = require("./types");
 const index_1 = require("./index");
 const registry_1 = require("../decorator/registry");
