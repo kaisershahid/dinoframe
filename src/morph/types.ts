@@ -129,6 +129,10 @@ export type MethodParams = {
 };
 
 export type TransformerPropertyDef = PropertyParams & MethodParams;
+export type TransormerPropertyOverridesMap = Record<
+  string,
+  Partial<TransformerPropertyDef>
+>;
 
 export type DecoratedMorphClass = DecoratedClass<
   MorphParams,
@@ -140,13 +144,36 @@ export const getMorphDecoratorBuilder = () => {
   return new DecoratedClassBuilder(MORPH_PROVIDER);
 };
 
+/**
+ * Directly handles serialization/deserialization for a class. The `overrides` parameter allows
+ * replacing rules for any desired fields -- this makes it easy to use a decorated base class
+ * while allowing for context-sensitive behavior (e.g. the id field of a new object should be
+ * blank on create but non-blank on update). Currently, only a single level is supported for overrides.
+ */
 export interface Morpher {
-  deserialize<T extends any = any>(source: any): T;
-  serialize<T extends any = any>(source: any): Record<string, any>;
+  deserialize<T extends any = any>(
+    source: any,
+    overrides?: TransormerPropertyOverridesMap
+  ): T;
+  serialize<T extends any = any>(
+    source: any,
+    overrides?: TransormerPropertyOverridesMap
+  ): Record<string, any>;
 }
 
+/**
+ * Manager for all morphers within a context. Allows for uniform extension of morphers (e.g. a
+ * database entity manager might enhance a list of child elements to do lazy-loading).
+ */
 export interface MorpherManager<MorpherType extends Morpher> {
-  deserializeTo<T extends any = any>(source: any, clazz: any): T;
-  serializeFrom<T extends any = any>(source: any): Record<string, any>;
+  deserializeTo<T extends any = any>(
+    source: any,
+    clazz: any,
+    overrides?: TransormerPropertyOverridesMap
+  ): T;
+  serializeFrom<T extends any = any>(
+    source: any,
+    overrides?: TransormerPropertyOverridesMap
+  ): Record<string, any>;
   getByClassOrId(clazzOrId: any): MorpherType | undefined;
 }

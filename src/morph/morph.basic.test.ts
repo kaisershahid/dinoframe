@@ -8,8 +8,8 @@ import {
   Serialize,
   Deserialize,
 } from "./decorators";
-import { FieldError, ObjectError } from "./types";
-import { MorphMarshaller, ValueFactory } from "./index";
+import {FieldError, ObjectError} from "./types";
+import {MorphMarshaller, ValueFactory} from "./index";
 
 /**
  * Validates `@Property`, `@PropertyGet`, `@PropertySet`, and `@Finalize`
@@ -18,13 +18,13 @@ describe("module: morph", function () {
   describe("MorphMarshaller (against MorphBasic & MorphComplex)", () => {
     @Morph()
     class MorphBasic {
-      @Property({ required: true })
+      @Property({required: true})
       title = "";
       private name: string = "";
       @Property({
         validator: (name) => {
           if (!name) {
-            return { message: "Must not be empty" };
+            return {message: "Must not be empty"};
           }
         },
         type: "string",
@@ -37,13 +37,13 @@ describe("module: morph", function () {
       })
       anEnum = "";
 
-      @Property({ type: "number" })
+      @Property({type: "number"})
       aNumber = 0;
 
-      @Property({ type: "boolean" })
+      @Property({type: "boolean"})
       aBoolean = true;
 
-      @Property({ name: "*" })
+      @Property({name: "*"})
       map: Record<string, any> = {};
 
       constructor() {
@@ -66,7 +66,7 @@ describe("module: morph", function () {
       @Finalize
       postDeserialize() {
         if (!this.title) {
-          throw new ObjectError("MorphBasic", { title: "cannot be empty" });
+          throw new ObjectError("MorphBasic", {title: "cannot be empty"});
         }
       }
     }
@@ -113,16 +113,16 @@ describe("module: morph", function () {
     });
     it("serializes with @Property and @PropertyGet", () => {
       const inst = getTransformer().serialize(morphTestInst);
-      expect(inst).toEqual({ ...srcValid, validatedString: "not empty" });
+      expect(inst).toEqual({...srcValid, validatedString: "not empty"});
     });
 
     it("deserializes and fails @Finalize", () => {
       try {
-        getTransformer().deserialize({ ...srcValid, title: "" });
+        getTransformer().deserialize({...srcValid, title: ""});
         throw new Error("expected error");
       } catch (err) {
         expect(err.message).toEqual("One or more errors for: MorphBasic");
-        expect(err.fieldErrors.title).toEqual({ message: "required" });
+        expect(err.fieldErrors.title).toEqual({message: "required"});
       }
     });
     it("deserializes and fails @Property.required (key absent)", () => {
@@ -137,7 +137,7 @@ describe("module: morph", function () {
     });
     it("deserializes and fails @Property.required (null)", () => {
       try {
-        getTransformer().deserialize({ title: null });
+        getTransformer().deserialize({title: null});
       } catch (err) {
         expect(err.message).toEqual("One or more errors for: MorphBasic");
         expect((err as ObjectError).fieldErrors.title).toEqual({
@@ -147,7 +147,7 @@ describe("module: morph", function () {
     });
     it(`deserializes and fails @Property.required ('')`, () => {
       try {
-        getTransformer().deserialize({ title: "" });
+        getTransformer().deserialize({title: ""});
       } catch (err) {
         expect(err.message).toEqual("One or more errors for: MorphBasic");
         expect((err as ObjectError).fieldErrors.title).toEqual({
@@ -164,14 +164,14 @@ describe("module: morph", function () {
       } catch (err) {
         expect(err.message).toEqual("One or more errors for: MorphBasic");
         expect((err as ObjectError).fieldErrors).toEqual({
-          validatedString: { message: "Must not be empty" },
+          validatedString: {message: "Must not be empty"},
         });
       }
     });
 
     it(`deserializes and fails @Property.type=number ('a')`, () => {
       try {
-        getTransformer().deserialize({ ...srcValid, aNumber: "a" });
+        getTransformer().deserialize({...srcValid, aNumber: "a"});
         throw new Error("expected error");
       } catch (e) {
         expect(e.fieldErrors.aNumber.message).toEqual('not a number: "a"');
@@ -180,7 +180,7 @@ describe("module: morph", function () {
 
     it(`deserializes and fails @Property.type=boolean ('a')`, () => {
       try {
-        getTransformer().deserialize({ ...srcValid, aBoolean: "a" });
+        getTransformer().deserialize({...srcValid, aBoolean: "a"});
         throw new Error("expected error");
       } catch (e) {
         expect(e.fieldErrors.aBoolean.message).toEqual('not a boolean: "a"');
@@ -189,7 +189,7 @@ describe("module: morph", function () {
 
     it(`deserializes and fails @Property.type=string (true)`, () => {
       try {
-        getTransformer().deserialize({ ...srcValid, validatedString: true });
+        getTransformer().deserialize({...srcValid, validatedString: true});
         throw new Error("expected error");
       } catch (e) {
         expect(e.fieldErrors.validatedString.message).toEqual(
@@ -201,7 +201,7 @@ describe("module: morph", function () {
     it(`deserializes and fails @Property.type=enum ('e')`, () => {
       const t = getTransformer();
       try {
-        const inst = t.deserialize({ ...srcValid, anEnum: "e" });
+        const inst = t.deserialize({...srcValid, anEnum: "e"});
         throw new Error("expected error");
       } catch (e) {
         expect(e.fieldErrors.anEnum.message).toEqual(
@@ -228,7 +228,7 @@ describe("module: morph", function () {
     });
     it("deserializes/serializes map value with catch-all *", () => {
       const t = getTransformer();
-      const src = { ...srcValid, validatedString: "x", key1: 1, key2: "b" };
+      const src = {...srcValid, validatedString: "x", key1: 1, key2: "b"};
       const inst = t.deserialize(src);
       expect(t.serialize(inst)).toEqual(src);
     });
@@ -258,6 +258,35 @@ describe("module: morph", function () {
       const inst = m?.deserialize(src);
       expect(m?.serialize(inst)).toEqual(src);
     });
+
+    it('deserializes with override', () => {
+      try {
+        getTransformer().deserialize<MorphBasic>(srcValid, {
+          title: {
+            validator: (value) => {
+              if (value != 'override') {
+                return {
+                  message: 'does not match "override"'
+                }
+              }
+            }
+          }
+        });
+        throw new Error('expected error');
+      } catch (e) {
+        expect(e.fieldErrors.title.message).toEqual('does not match "override"')
+      }
+    })
+    it('serializes with override', () => {
+      const m = getTransformer();
+      const inst = m.deserialize<MorphBasic>(srcValid);
+      const serialized = m.serialize(inst, {
+        title: {
+          getter: 'getName'
+        }
+      });
+      expect(serialized.title).toEqual(srcValid.sourceName);
+    })
   });
 
   describe("MorphMarshaller (manual serialization/deserialization)", () => {
@@ -274,7 +303,7 @@ describe("module: morph", function () {
         if (source.error) {
           throw new ObjectError("failed", source);
         }
-        this.map = { ...source };
+        this.map = {...source};
       }
 
       @Serialize
@@ -284,7 +313,7 @@ describe("module: morph", function () {
     }
 
     const m = getMorpherById(MorphManual);
-    const src = { a: 1, b: 2 };
+    const src = {a: 1, b: 2};
     it("uses @Deserialize", () => {
       const inst = m?.deserialize<MorphManual>(src);
       expect(inst?.get("a")).toEqual(1);
@@ -298,9 +327,9 @@ describe("module: morph", function () {
 
     it("propagates ObjectError on failed @Deserialize", () => {
       try {
-        const inst = m?.deserialize<MorphManual>({ ...src, error: true });
+        const inst = m?.deserialize<MorphManual>({...src, error: true});
       } catch (e) {
-        expect(e.fieldErrors).toEqual({ ...src, error: true });
+        expect(e.fieldErrors).toEqual({...src, error: true});
       }
     });
   });
@@ -316,18 +345,18 @@ describe("module: morph", function () {
     };
 
     it("listType=strict: rejects scalar", () => {
-      expect(getMessage("a", { listType: "strict" })).toEqual(
+      expect(getMessage("a", {listType: "strict"})).toEqual(
         "listType=strict, string given"
       );
     });
     it("listType=strict: accepts array", () => {
-      expect(getMessage(["a"], { listType: "strict" })).toEqual("success");
+      expect(getMessage(["a"], {listType: "strict"})).toEqual("success");
     });
     it("listType=mixed: accepts scalar", () => {
-      expect(getMessage("a", { listType: "mixed" })).toEqual("success");
+      expect(getMessage("a", {listType: "mixed"})).toEqual("success");
     });
     it("listType=mixed: accepts array", () => {
-      expect(getMessage(["a"], { listType: "mixed" })).toEqual("success");
+      expect(getMessage(["a"], {listType: "mixed"})).toEqual("success");
     });
     it("listType=undefined|none: rejects array", () => {
       expect(getMessage(["a"], {})).toEqual("listType=none, array given");
@@ -335,7 +364,7 @@ describe("module: morph", function () {
 
     it("type=string, val=[string,number]; rejects value", () => {
       expect(
-        getMessage(["a", 1], { listType: "mixed", type: "string" })
+        getMessage(["a", 1], {listType: "mixed", type: "string"})
       ).toEqual('one or more errors: {"1":"not a string: 1"}');
     });
 
@@ -398,7 +427,7 @@ describe("module: morph", function () {
         expectedErr:
           'one or more errors: {"0":"ab does not match any enum values: [a; b]"}',
       },
-    ].forEach(({ type, success, val, enumValues, listType, expectedErr }) => {
+    ].forEach(({type, success, val, enumValues, listType, expectedErr}) => {
       it(`${
         listType ? "listType=" + listType + ", " : ""
       }type=${type}, val=${typeof val}; ${
@@ -409,11 +438,11 @@ describe("module: morph", function () {
           (success
             ? "success"
             : enumValues
-            ? `${val} does not match any enum values: [${enumValues.join(
+              ? `${val} does not match any enum values: [${enumValues.join(
                 "; "
               )}]`
-            : `not a ${type}: ${JSON.stringify(val)}`);
-        expect(getMessage(val, { type, enumValues, listType })).toEqual(
+              : `not a ${type}: ${JSON.stringify(val)}`);
+        expect(getMessage(val, {type, enumValues, listType})).toEqual(
           expectedErr
         );
       });
