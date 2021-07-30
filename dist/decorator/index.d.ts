@@ -68,14 +68,14 @@ export declare type BundleEntry = {
     id: string;
     metadata: DecoratedClass[];
 };
-export declare const getGlobalDecoratedClasses: (filter?: ((rec: DecoratedClass<any, any, any, any>) => boolean) | undefined) => DecoratedClass<any, any, any, any>[];
+export declare const getGlobalDecoratedClasses: (filter?: ((rec: DecoratedClass) => boolean) | undefined) => DecoratedClass[];
 export declare const getBundledMetadata: (id: string) => BundleEntry;
 export declare const getGidsForBundle: (id: string) => string[];
 export declare const getManyBundlesMetadata: (ids: string[]) => BundleEntry[];
 /**
  * Most common use case -- get the metadata of all bundles as a single list.
  */
-export declare const flattenManyBundlesMetadata: (ids: string[]) => DecoratedClass<any, any, any, any>[];
+export declare const flattenManyBundlesMetadata: (ids: string[]) => DecoratedClass[];
 /**
  * Given an input list of metadata, only return the ones for specified provider. E.g.
  * `filterMetadataByProvider([{_provider:'http'},{_provider: 'service-container'}], 'http')`

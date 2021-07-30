@@ -23,7 +23,7 @@ import {
 } from "./service-container/common/runtime";
 import { ID_LOGGER } from "./service-container/common/logging";
 import { ClassServiceMetadata } from "./service-container/types";
-import {getHttpMetaByGids} from "./http/decorators";
+import { getHttpMetaByGids } from "./http/decorators";
 
 export class Dinoframe {
   static readonly ID_EXPRESS_APP = "express.app";
@@ -121,8 +121,8 @@ export class Dinoframe {
     }
 
     // 3. now register http stuff after services load
-    const controllers = getHttpMetaByGids(meta.map(rec => rec.gid));
-    console.log('CONTROLLERS=', JSON.stringify(controllers,null, '  '))
+    const controllers = getHttpMetaByGids(meta.map((rec) => rec.gid));
+    console.log("CONTROLLERS=", JSON.stringify(controllers, null, "  "));
     this.processHttpDecorators(controllers);
   }
 

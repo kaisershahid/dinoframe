@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.getMorphDecoratorBuilder = exports.ObjectError = exports.FieldError = exports.MorphError = exports.MORPH_PROVIDER = void 0;
 const decorator_1 = require("../decorator");
 exports.MORPH_PROVIDER = "dinoframe.morph";
 class MorphError extends Error {
