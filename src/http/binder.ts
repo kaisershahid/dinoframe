@@ -253,7 +253,7 @@ export class HttpDecoratorsBinder {
           path =
             type === HandlerConfigType.error
               ? undefined
-              : path
+              : path !== undefined
               ? `${pathPrefix}${path}`
               : undefined;
           priority = priority ?? 0;

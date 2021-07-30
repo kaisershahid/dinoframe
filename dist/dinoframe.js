@@ -77,7 +77,7 @@ class Dinoframe {
         }
         // 3. now register http stuff after services load
         const controllers = decorators_1.getHttpMetaByGids(meta.map((rec) => rec.gid));
-        console.log("CONTROLLERS=", JSON.stringify(controllers, null, "  "));
+        // console.log("CONTROLLERS=", JSON.stringify(controllers, null, "  "));
         this.processHttpDecorators(controllers);
     }
     processHttpDecorators(controllers) {
