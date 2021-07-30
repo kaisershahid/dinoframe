@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Dinoframe = void 0;
 const service_container_1 = require("./service-container");
 const binder_1 = require("./http/binder");
 const decorator_1 = require("./decorator");
@@ -8,6 +9,7 @@ const bundle_1 = require("./service-container/bundle");
 const utils_1 = require("./service-container/utils");
 const runtime_1 = require("./service-container/common/runtime");
 const logging_1 = require("./service-container/common/logging");
+const decorators_1 = require("./http/decorators");
 class Dinoframe {
     constructor(bundleIds) {
         this.bundleConfigs = {};
@@ -74,7 +76,8 @@ class Dinoframe {
             throw e;
         }
         // 3. now register http stuff after services load
-        const controllers = decorator_1.filterMetadataByProvider(meta, require("./http").PROVIDER_ID);
+        const controllers = decorators_1.getHttpMetaByGids(meta.map((rec) => rec.gid));
+        console.log("CONTROLLERS=", JSON.stringify(controllers, null, "  "));
         this.processHttpDecorators(controllers);
     }
     processHttpDecorators(controllers) {

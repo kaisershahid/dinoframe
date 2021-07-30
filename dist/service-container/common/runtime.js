@@ -13,6 +13,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 var RuntimeConfigProvider_1;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.RuntimeConfigProvider = exports.INTERFACE_CONFIG_INSTANCE = exports.CONFIG_PROVIDER_SUFFIX = exports.discover = exports.DefaultRuntimeEnv = exports.INTERFACE_ENV = exports.StandardConfigWithId = exports.StandardConfig = exports.ID_RUNTIME = void 0;
 const decorator_1 = require("../../decorator");
 const decorators_1 = require("../decorators");
 const types_1 = require("../types");

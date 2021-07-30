@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.addNewServiceMeta = exports.getDecoratedServiceRecords = exports.Inject = exports.Dependency = exports.Deactivate = exports.Activate = exports.Factory = exports.Service = void 0;
 const types_1 = require("./types");
 const registry_1 = require("../decorator/registry");
 const utils_1 = require("./utils");
