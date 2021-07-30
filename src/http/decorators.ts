@@ -91,5 +91,5 @@ export const RequestParam = (
 export const getHttpAnnotations = () => collector.getFinalized();
 
 export const getHttpMetaByGids = (gids: string[]) => {
-  return collector.getFinalized().filter(rec => gids.includes(rec.gid));
-}
+  return collector.getFinalized().filter((rec) => gids.includes(rec.gid));
+};
