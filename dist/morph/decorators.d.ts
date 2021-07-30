@@ -1,4 +1,4 @@
-import { DecoratedMorphClass, MorpherManager, MorphParams, PropertyParams } from "./types";
+import { MorpherManager, MorphParams, PropertyParams } from "./types";
 import { MorphMarshaller } from "./index";
 /**
  * Class -- marks a class as being morphable.
@@ -32,7 +32,7 @@ export declare const Serialize: (target: any, methodName: string, desc: Property
  * `(source: any, morphManager?: MorpherManager<any>)`.
  */
 export declare const Deserialize: (target: any, methodName: string, desc: PropertyDescriptor) => void;
-export declare const getMorpherDefinitions: () => DecoratedMorphClass[];
+export declare const getMorpherDefinitions: () => import("../decorator").DecoratedClass<MorphParams, import("./types").MethodParams, PropertyParams, any>[];
 export declare const getMorpherDefByGid: (clazzOrGid: any) => import("../decorator").DecoratedClass<any, any, any, any> | undefined;
 export declare const getMorphManager: () => MorpherManager<MorphMarshaller<any>>;
 export declare const getMorpherById: (clazzOrGid: any) => MorphMarshaller<any> | undefined;

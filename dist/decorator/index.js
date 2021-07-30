@@ -4,7 +4,6 @@
  * metadata for reflection.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DecoratedClassBuilder = exports.duplicateDecoratorsForGid = exports.filterByDecorator = exports.filterMetadataByProvider = exports.flattenManyBundlesMetadata = exports.getManyBundlesMetadata = exports.getGidsForBundle = exports.getBundledMetadata = exports.getGlobalDecoratedClasses = exports.BundleDecoratorFactory = exports.getBundleId = exports.hasBundleId = exports.getEmptyDecoratedClass = exports.RecordType = void 0;
 const registry_1 = require("./registry");
 var RecordType;
 (function (RecordType) {
