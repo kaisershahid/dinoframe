@@ -9,7 +9,7 @@ The JS engine will only process a class when a concrete reference is made to it 
 1. directly reference the classes you want to process
    - e.g. simply having a line like `[Class1, Class2]` is enough
 2. optionally return a bundle identifier
-   - explained in [bundle](./service-container/bundle/readme.md) submodule
+   - explained in [bundle](src/service-container/bundle/readme.md) submodule
 
 This is only a suggestion, but we tend to prefer explicit entrypoints to avoid any confusion.
 
@@ -30,3 +30,7 @@ Building on `decorator`, and inspired by [Apache Sling](https://sling.apache.org
 dependencies purely through decorators. Dependency management ensures no service starts up until all its dependencies are fulfilled, interfaces provide inversion-of-control, and flexible access pattern works seamlessly with your existing code.
 
 A companion to the container is `http`, which makes it easy to declare routes and middleware in an Express-friendly way while also supporting service container integration.
+
+## `morph`
+
+The `morph` module is a lightweight and flexible serialization/deserialization library that makes it easy to validate and convert external data into a concrete class instance. See the [morph readme](./src/morph/readme.md) for in-depth examples and explanation. 
