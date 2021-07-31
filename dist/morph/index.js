@@ -137,12 +137,13 @@ class MorphMarshaller {
             inst[def.propertyName] = val;
         }
     }
-    doDeserialize(inst, source) {
+    doDeserialize(inst, source, overrides) {
+        var _a;
         const errors = {};
         let catchAllDef = null;
         const keysProcessed = {};
         for (const name in this.propertyDefs) {
-            const def = this.propertyDefs[name];
+            const def = { ...this.propertyDefs[name], ...((_a = overrides[name]) !== null && _a !== void 0 ? _a : {}) };
             if (name == exports.NAME_CATCH_ALL) {
                 catchAllDef = def;
                 continue;
@@ -180,39 +181,41 @@ class MorphMarshaller {
     /**
      * Build morpher stack and apply from highest to lowest
      */
-    deserializeAncestors(inst, source) {
+    deserializeAncestors(inst, source, overrides) {
         const mstack = this.getAncestorStack();
         for (const tr of mstack) {
-            tr.doDeserialize(inst, source);
+            tr.doDeserialize(inst, source, overrides);
         }
     }
-    deserialize(source) {
+    deserialize(source, overrides) {
         const [inst, subclass] = this.makeInstance(source);
+        let ovr = overrides !== null && overrides !== void 0 ? overrides : {};
         if (this.deserializeMethod) {
             inst[this.deserializeMethod](source, this.manager);
             return inst;
         }
         if (this.baseClass) {
-            this.deserializeAncestors(inst, source);
+            this.deserializeAncestors(inst, source, ovr);
         }
         else {
-            this.doDeserialize(inst, source);
+            this.doDeserialize(inst, source, ovr);
         }
         if (subclass) {
             // continue populating using subclass rules
             const subtransformer = this.manager.getByClassOrId(subclass);
-            subtransformer === null || subtransformer === void 0 ? void 0 : subtransformer.doDeserialize(inst, source);
+            subtransformer === null || subtransformer === void 0 ? void 0 : subtransformer.doDeserialize(inst, source, ovr);
         }
         return inst;
     }
-    doSerialize(map, source) {
+    doSerialize(map, source, overrides) {
+        var _a;
         let catchAllDef = null;
         for (const name in this.propertyDefs) {
             if (name == exports.NAME_CATCH_ALL) {
                 catchAllDef = this.propertyDefs[name];
                 continue;
             }
-            const def = this.propertyDefs[name];
+            const def = { ...this.propertyDefs[name], ...((_a = overrides[name]) !== null && _a !== void 0 ? _a : {}) };
             let val;
             if (def.getter) {
                 val = source[def.getter]();
@@ -246,22 +249,24 @@ class MorphMarshaller {
             delete map[ignoreProp];
         }
     }
-    serializeAncestors(map, source) {
+    serializeAncestors(map, source, overrides) {
         const mstack = this.getAncestorStack();
         for (const t of mstack) {
-            t.doSerialize(map, source);
+            t.doSerialize(map, source, overrides);
         }
     }
-    serialize(source) {
+    serialize(source, overrides) {
         const map = {};
+        let ovr = overrides !== null && overrides !== void 0 ? overrides : {};
+        // @question pass ovr to serializeMethod?
         if (this.serializeMethod) {
             return source[this.serializeMethod](this.manager);
         }
         if (this.baseClass) {
-            this.serializeAncestors(map, source);
+            this.serializeAncestors(map, source, ovr);
         }
         else {
-            this.doSerialize(map, source);
+            this.doSerialize(map, source, ovr);
         }
         if (this.discriminatorCol) {
             // serialize and copy non-undefined values into map if polymorph

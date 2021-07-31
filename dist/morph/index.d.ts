@@ -1,4 +1,4 @@
-import { DecoratedMorphClass, Morpher, MorpherManager, TransformerPropertyDef } from "./types";
+import { DecoratedMorphClass, Morpher, MorpherManager, TransformerPropertyDef, TransormerPropertyOverridesMap } from "./types";
 export declare const NAME_CATCH_ALL = "*";
 export declare class MorphMarshaller<Manager extends MorpherManager<any> = any> implements Morpher {
     private manager;
@@ -26,16 +26,16 @@ export declare class MorphMarshaller<Manager extends MorpherManager<any> = any> 
      */
     makeInstance(source: any): any;
     doSetValue(inst: any, val: any, def: TransformerPropertyDef, errors: Record<string, any>): void;
-    doDeserialize<T extends any = any>(inst: any, source: any): T;
+    doDeserialize<T extends any = any>(inst: any, source: any, overrides: TransormerPropertyOverridesMap): T;
     getAncestorStack(): MorphMarshaller<Manager>[];
     /**
      * Build morpher stack and apply from highest to lowest
      */
-    deserializeAncestors(inst: any, source: any): void;
-    deserialize<T extends any = any>(source: any): T;
-    doSerialize(map: any, source: any): void;
-    serializeAncestors(map: any, source: any): void;
-    serialize(source: any): any;
+    deserializeAncestors(inst: any, source: any, overrides: TransormerPropertyOverridesMap): void;
+    deserialize<T extends any = any>(source: any, overrides?: TransormerPropertyOverridesMap): T;
+    doSerialize(map: any, source: any, overrides: TransormerPropertyOverridesMap): void;
+    serializeAncestors(map: any, source: any, overrides: TransormerPropertyOverridesMap): void;
+    serialize(source: any, overrides?: TransormerPropertyOverridesMap): any;
     private deserializeNested;
     private serializeNested;
 }

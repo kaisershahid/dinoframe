@@ -5,7 +5,7 @@ import {
   MorpherManager,
   MorphError,
   ObjectError,
-  TransformerPropertyDef,
+  TransformerPropertyDef, TransormerPropertyOverridesMap,
 } from "./types";
 import { getGid } from "../decorator/registry";
 
@@ -173,14 +173,14 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any>
     }
   }
 
-  doDeserialize<T extends any = any>(inst: any, source: any): T {
+  doDeserialize<T extends any = any>(inst: any, source: any, overrides: TransormerPropertyOverridesMap): T {
     const errors: Record<string, any> = {};
 
     let catchAllDef: TransformerPropertyDef = null as any;
     const keysProcessed: Record<string, string> = {};
 
     for (const name in this.propertyDefs) {
-      const def = this.propertyDefs[name];
+      const def = {...this.propertyDefs[name], ...(overrides[name] ?? {})};
       if (name == NAME_CATCH_ALL) {
         catchAllDef = def;
         continue;
@@ -226,15 +226,16 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any>
   /**
    * Build morpher stack and apply from highest to lowest
    */
-  deserializeAncestors(inst: any, source: any) {
+  deserializeAncestors(inst: any, source: any, overrides: TransormerPropertyOverridesMap) {
     const mstack = this.getAncestorStack();
     for (const tr of mstack) {
-      tr.doDeserialize(inst, source);
+      tr.doDeserialize(inst, source, overrides);
     }
   }
 
-  deserialize<T extends any = any>(source: any): T {
+  deserialize<T extends any = any>(source: any, overrides?: TransormerPropertyOverridesMap): T {
     const [inst, subclass] = this.makeInstance(source) as [T, any];
+    let ovr = overrides ?? {};
 
     if (this.deserializeMethod) {
       inst[this.deserializeMethod](source, this.manager);
@@ -242,21 +243,21 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any>
     }
 
     if (this.baseClass) {
-      this.deserializeAncestors(inst, source);
+      this.deserializeAncestors(inst, source, ovr);
     } else {
-      this.doDeserialize(inst, source);
+      this.doDeserialize(inst, source, ovr);
     }
 
     if (subclass) {
       // continue populating using subclass rules
       const subtransformer = this.manager.getByClassOrId(subclass);
-      subtransformer?.doDeserialize(inst, source);
+      subtransformer?.doDeserialize(inst, source, ovr);
     }
 
     return inst;
   }
 
-  doSerialize(map: any, source: any) {
+  doSerialize(map: any, source: any, overrides: TransormerPropertyOverridesMap) {
     let catchAllDef: TransformerPropertyDef = null as any;
 
     for (const name in this.propertyDefs) {
@@ -265,7 +266,7 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any>
         continue;
       }
 
-      const def = this.propertyDefs[name];
+      const def = {...this.propertyDefs[name], ...(overrides[name] ?? {})};
       let val: any;
       if (def.getter) {
         val = source[def.getter]();
@@ -303,24 +304,26 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any>
     }
   }
 
-  serializeAncestors(map: any, source: any) {
+  serializeAncestors(map: any, source: any, overrides: TransormerPropertyOverridesMap) {
     const mstack = this.getAncestorStack();
     for (const t of mstack) {
-      t.doSerialize(map, source);
+      t.doSerialize(map, source, overrides);
     }
   }
 
-  serialize(source: any): any {
+  serialize(source: any, overrides?: TransormerPropertyOverridesMap): any {
     const map: any = {};
+    let ovr = overrides ?? {};
 
+    // @question pass ovr to serializeMethod?
     if (this.serializeMethod) {
       return source[this.serializeMethod](this.manager);
     }
 
     if (this.baseClass) {
-      this.serializeAncestors(map, source);
+      this.serializeAncestors(map, source, ovr);
     } else {
-      this.doSerialize(map, source);
+      this.doSerialize(map, source, ovr);
     }
 
     if (this.discriminatorCol) {
