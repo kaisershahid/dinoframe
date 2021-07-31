@@ -251,7 +251,7 @@ export class MorphMarshaller<Manager extends MorpherManager<any> = any>
     if (subclass) {
       // continue populating using subclass rules
       const subtransformer = this.manager.getByClassOrId(subclass);
-      subtransformer?.doDeserialize(inst, source);
+      subtransformer?.doDeserialize(inst, source, ovr);
     }
 
     return inst;
