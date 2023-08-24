@@ -1,5 +1,5 @@
-import { DecoratedClass } from "../decorator";
-import { DecoratedServiceRecord } from "./utils";
+import { DecoratedClass } from '../decorator';
+import { DecoratedServiceRecord } from './utils';
 /**
  * These are the standard priorities used to organize startup. Note that priorities don't absolutely
  * guarantee starting before lower priorities -- if a higher priority service has to wait on a lower
@@ -19,7 +19,7 @@ export declare enum ContainerPhases {
     default = 0,
     userlow = -10000
 }
-export declare type BaseServiceMeta = {
+export type BaseServiceMeta = {
     interfaces?: string[];
     disabled?: boolean;
     /** Default 0. Higher number means earlier start. Load order on tie. */
@@ -39,7 +39,7 @@ export declare type BaseServiceMeta = {
     isFactory?: boolean;
     subscribeToInterfaces?: string[];
 };
-export declare type ServiceMeta = BaseServiceMeta & {
+export type ServiceMeta = BaseServiceMeta & {
     id: string;
     gid: string;
 };
@@ -50,11 +50,11 @@ export declare enum ServiceState {
     deactivating = 21,
     deactivated = 30
 }
-export declare type InjectableList = (DependencyMeta | undefined)[];
+export type InjectableList = (DependencyMeta | undefined)[];
 export interface InterfaceAvailableListener {
-    onAvailableInterface(_interface: string, services: any[]): any;
+    onAvailableInterface(_interface: string, services: any[]): void;
 }
-export declare type ServiceRecord = {
+export type ServiceRecord = {
     provider: string;
     id: string;
     gid: string;
@@ -80,11 +80,11 @@ export declare enum MethodType {
     factory = 3,
     injectable = 4
 }
-export declare type MethodInvoker = {
+export type MethodInvoker = {
     type: MethodType;
     name: string;
 };
-export declare type DependencyMeta = {
+export type DependencyMeta = {
     /** Id of dependency. Takes precedence over interfaces */
     id?: string;
     /** match 1+ */
@@ -97,7 +97,7 @@ export declare type DependencyMeta = {
         min?: number;
     };
 };
-export declare type ClassServiceMetadata = DecoratedClass<ServiceMeta, MethodInvoker, DependencyMeta>;
+export type ClassServiceMetadata = DecoratedClass<ServiceMeta, MethodInvoker, DependencyMeta>;
 export interface Container {
     /** Checks if a service has been registered. */
     has(id: string): boolean;
@@ -119,10 +119,10 @@ export interface Container {
     /**
      * Advertise a service record to container for [immediate] startup.
      */
-    register(metadata: DecoratedServiceRecord): any;
+    register(metadata: DecoratedServiceRecord): this;
 }
 /**
  * A partial container interface implemented by @ServiceFactory instances.
  */
-export interface FactoryContainer extends Pick<Container, "has" | "resolve"> {
+export interface FactoryContainer extends Pick<Container, 'has' | 'resolve'> {
 }

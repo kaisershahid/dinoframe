@@ -3,18 +3,18 @@ import { DecoratedClass, DecoratedMethod } from "../decorator";
 import { ControllerConfig, HandlerConfig, InjectedRequestParam, RequestParamConfig } from "./types";
 import { ServiceContainer } from "../service-container";
 export declare const SVC_HTTP_DEFAULT = "http.server";
-export declare type AllowedHandler = RequestHandler | ErrorRequestHandler;
+export type AllowedHandler = RequestHandler | ErrorRequestHandler;
 /**
  * Accepts a handler generated from `makeRequestHandlerProxyToController()` so that caller can bind it to whatever service
  * requires it.
  */
-export declare type BoundHandlerCallback = (handler: AllowedHandler, param: HandlerConfig, controller: DecoratedClass<ControllerConfig>) => void;
+export type BoundHandlerCallback = (handler: AllowedHandler, param: HandlerConfig, controller: DecoratedClass<ControllerConfig>) => void;
 /**
  * For generated handlers, allows a preconditional check for given request before any further processing is done.
  * For instance, if a route defines `headers`, the precondition can ensure that only a request with one of the allowed
  * headers is processed. Must throw on failure.
  */
-export declare type BoundHandlerPrecondition = (request: Request, response: Response) => void;
+export type BoundHandlerPrecondition = (request: Request, response: Response) => void;
 /**
  * Attempts to extract each arg's corresponding request parameter value. If
  * transformer is defined, apply to value. First 3 args are ignored since
@@ -38,7 +38,7 @@ export declare const assertArgsAreValid: (args: any[], request: Request, respons
  * @param handlerConfig Aggregated method decorations
  * @param precondition
  */
-export declare const makeRequestHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>, precondition?: BoundHandlerPrecondition | undefined) => RequestHandler;
+export declare const makeRequestHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>, precondition?: BoundHandlerPrecondition) => RequestHandler;
 export declare const makeErrorHandlerProxyToController: (controller: any, methodName: string, handlerConfig: DecoratedMethod<HandlerConfig, InjectedRequestParam>) => ErrorRequestHandler;
 /**
  * Takes set of HTTP annotations and attempts to:

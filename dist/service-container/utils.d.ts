@@ -31,7 +31,7 @@ export declare class DecoratedServiceRecord implements ServiceRecord {
      * Returns a new instance with a deep copy of service meta.
      */
     cloneAndRegisterNewService(newId: string, override: ServiceMeta): DecoratedServiceRecord;
-    createNewClassServiceMeta(override: ServiceMeta): DecoratedClass<ServiceMeta, MethodInvoker, DependencyMeta, any>;
+    createNewClassServiceMeta(override: ServiceMeta): ClassServiceMetadata;
 }
 export declare const getAllServicesMap: () => Record<string, DecoratedServiceRecord[]>;
 export declare const getAllServicesByGidMap: () => Record<string, DecoratedServiceRecord>;

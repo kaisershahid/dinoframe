@@ -2,7 +2,7 @@
  * A set of helper classes/methods that make it easy to process and collect decorator
  * metadata for reflection.
  */
-export declare type DecoratedParameter = {
+export type DecoratedParameter = {
     method: string;
     pos: number;
 };
@@ -16,19 +16,19 @@ export declare enum RecordType {
 /**
  * Extend metadata with key identifiers that determine scope/context of metadata.
  */
-export declare type MetaDescriptor = {
+export type MetaDescriptor = {
     _type: RecordType;
     _provider: string;
     _decorator: string;
 };
-export declare type DecoratedMethod<Method extends any = any, Parameter extends any = any> = {
+export type DecoratedMethod<Method extends any = any, Parameter extends any = any> = {
     metadata: (MetaDescriptor & Method)[];
     parameters: (MetaDescriptor & Parameter)[][];
 };
 /**
  * A convenient structure encapsulating all class decorations.
  */
-export declare type DecoratedClass<Clazz extends any = any, Method extends any = any, Property extends any = any, Parameter extends any = any> = MetaDescriptor & {
+export type DecoratedClass<Clazz extends any = any, Method extends any = any, Property extends any = any, Parameter extends any = any> = MetaDescriptor & {
     gid: string;
     clazz: any;
     metadata: (MetaDescriptor & Clazz)[];
@@ -41,7 +41,7 @@ export declare type DecoratedClass<Clazz extends any = any, Method extends any =
  * Generates an empty structure with given gid.
  */
 export declare const getEmptyDecoratedClass: <Clazz extends object = any, Method extends object = any, Parameter extends object = any, Property extends object = any>(gid: string, provider: string) => DecoratedClass<Clazz, Method, Parameter, Property>;
-export declare type BundleIdAccessible = {
+export type BundleIdAccessible = {
     getBundleId(): string;
 };
 export declare const hasBundleId: (o: any) => o is BundleIdAccessible;
@@ -64,7 +64,7 @@ export declare const getBundleId: (o: any) => string | undefined;
  *
  */
 export declare const BundleDecoratorFactory: (id: string) => (t: any) => void;
-export declare type BundleEntry = {
+export type BundleEntry = {
     id: string;
     metadata: DecoratedClass[];
 };

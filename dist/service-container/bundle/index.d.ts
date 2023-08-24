@@ -1,6 +1,6 @@
 import { BaseServiceMeta } from "../types";
 import { DecoratedServiceRecord } from "../utils";
-export declare type BundleConfigService = {
+export type BundleConfigService = {
     id: string;
     runtimeId?: string;
     /** @todo if present, set runtimeId as `idPrefix + '.' + id` */
@@ -9,7 +9,7 @@ export declare type BundleConfigService = {
     meta?: Partial<BaseServiceMeta>;
     config?: Record<string, any>;
 };
-export declare type BundleConfig = {
+export type BundleConfig = {
     bundleDependencies?: string[];
     moduleDependencies?: string[];
     services: BundleConfigService[];

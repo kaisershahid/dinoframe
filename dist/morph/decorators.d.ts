@@ -33,6 +33,6 @@ export declare const Serialize: (target: any, methodName: string, desc: Property
  */
 export declare const Deserialize: (target: any, methodName: string, desc: PropertyDescriptor) => void;
 export declare const getMorpherDefinitions: () => DecoratedMorphClass[];
-export declare const getMorpherDefByGid: (clazzOrGid: any) => import("../decorator").DecoratedClass<any, any, any, any> | undefined;
+export declare const getMorpherDefByGid: (clazzOrGid: any) => import("..").DecoratedClass<any, any, any, any> | undefined;
 export declare const getMorphManager: () => MorpherManager<MorphMarshaller<any>>;
 export declare const getMorpherById: (clazzOrGid: any) => MorphMarshaller<any> | undefined;
