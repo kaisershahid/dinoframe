@@ -1,5 +1,5 @@
 {
-	"name": "dinoframe",
+	"name": "@acmedinotech/dinoframe",
 	"version": "0.1.20230824",
 	"scripts": {
 		"test": "npx jest",
