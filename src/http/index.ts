@@ -1,3 +1,7 @@
+export * from './types';
+export * from './decorators';
+export * from './utils';
+export * from './binder';
 import { Factory, Inject, Service } from '../service-container/decorators';
 import express from 'express';
 import * as http from 'http';

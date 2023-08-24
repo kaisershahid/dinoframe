@@ -2,7 +2,7 @@
  * A set of helper classes/methods that make it easy to process and collect decorator
  * metadata for reflection.
  */
-
+export * as decoratorRegistry from './registry';
 import { getOrMakeGidForConstructor } from './registry';
 import { DecoratedServiceRecord } from '../service-container/utils';
 import { ClassServiceMetadata } from '../service-container/types';

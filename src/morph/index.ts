@@ -1,3 +1,5 @@
+export * from './types';
+export * from './decorators';
 import {
 	DecoratedMorphClass,
 	FieldError,
