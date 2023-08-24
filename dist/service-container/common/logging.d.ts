@@ -1,4 +1,4 @@
-import { FactoryContainer } from "../types";
+import { FactoryContainer } from '../types';
 export declare const ID_LOGGER = "logger";
 export declare enum LoggerLevel {
     TRACE = 1,
@@ -9,11 +9,11 @@ export declare enum LoggerLevel {
 }
 export declare const INTERFACE_LOG_LOGGER = "logger.logger";
 export interface Logger {
-    trace(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): any;
-    debug(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): any;
-    info(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): any;
-    warn(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): any;
-    error(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): any;
+    trace(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): void;
+    debug(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): void;
+    info(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): void;
+    warn(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): void;
+    error(messageOrError: string | Error | any, err?: Error | any, ...args: any[]): void;
 }
 export declare class LoggerWrappingWriter implements Logger {
     private name;
@@ -25,7 +25,7 @@ export declare class LoggerWrappingWriter implements Logger {
     trace(messageOrError: any, err: any, ...args: any[]): void;
     warn(messageOrError: any, err: any, ...args: any[]): void;
 }
-export declare type LogEventContext = {
+export type LogEventContext = {
     time: Date;
     level: LoggerLevel;
     name: string;
@@ -33,18 +33,14 @@ export declare type LogEventContext = {
 export declare const INTERFACE_LOG_WRITER = "logger.writer";
 export interface LoggerWriter {
     getMappedNames(): string[];
-    writeEvent(context: LogEventContext, messageOrError: string | Error | any, err: Error | any, ...args: any[]): any;
+    writeEvent(context: LogEventContext, messageOrError: string | Error | any, err: Error | any, ...args: any[]): void;
 }
 export declare const INTERFACE_LOG_FORMATTER = "logger.formatter";
 export interface LoggerEventFormatter {
     createEvent(context: LogEventContext, messageOrError: string | Error | any, err: Error | any, ...args: any[]): string;
 }
 export declare class StandardEventFormatter implements LoggerEventFormatter {
-    createEvent({ time, level, name }: {
-        time: any;
-        level: any;
-        name: any;
-    }, messageOrError: string | Error | any, err: Error | any, ...args: any[]): string;
+    createEvent({ time, level, name }: LogEventContext, messageOrError: string | Error | any, err: Error | any, ...args: any[]): string;
     static formatArgs(messageOrError: string | Error | any, err: Error | any, ...args: any[]): string;
 }
 /**
@@ -55,13 +51,13 @@ export declare class LoggerWriterProxy implements LoggerWriter {
     constructor(writer: LoggerWriter);
     getMappedNames(): string[];
     setWriter(writer: LoggerWriter): void;
-    writeEvent(context: any, ...args: any[]): void;
+    writeEvent(context: LogEventContext, ...args: any[]): void;
 }
 export declare class LoggerWriterConsole implements LoggerWriter {
     level: LoggerLevel;
     formatter: LoggerEventFormatter;
     getMappedNames(): string[];
-    writeEvent(context: any, ...args: any[]): void;
+    writeEvent(context: LogEventContext, ...args: any[]): void;
 }
 export declare class LoggerFactory implements FactoryContainer {
     private static inst;

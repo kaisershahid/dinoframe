@@ -1,4 +1,4 @@
-import { DecoratedMorphClass, Morpher, MorpherManager, TransformerPropertyDef, TransormerPropertyOverridesMap } from "./types";
+import { DecoratedMorphClass, Morpher, MorpherManager, TransformerPropertyDef, TransormerPropertyOverridesMap } from './types';
 export declare const NAME_CATCH_ALL = "*";
 export declare class MorphMarshaller<Manager extends MorpherManager<any> = any> implements Morpher {
     private manager;
@@ -38,6 +38,7 @@ export declare class MorphMarshaller<Manager extends MorpherManager<any> = any> 
     serialize(source: any, overrides?: TransormerPropertyOverridesMap): any;
     private deserializeNested;
     private serializeNested;
+    update<T extends any = any>(inst: T, source: any, overrides?: TransormerPropertyOverridesMap): void;
 }
 export declare class ValueFactory {
     static validateValue(val: any, def: TransformerPropertyDef): void;

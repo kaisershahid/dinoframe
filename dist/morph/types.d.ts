@@ -1,4 +1,4 @@
-import { DecoratedClass, DecoratedClassBuilder } from "../decorator";
+import { DecoratedClass, DecoratedClassBuilder } from '../decorator';
 export declare const MORPH_PROVIDER = "dinoframe.morph";
 export declare class MorphError extends Error {
     constructor(message: string);
@@ -10,12 +10,12 @@ export declare class ObjectError extends MorphError {
     fieldErrors: Record<string, any>;
     constructor(targetName: string, errors: Record<string, any>);
 }
-export declare type ValidatorErrorMap = {
+export type ValidatorErrorMap = {
     message: string;
     [key: string]: any;
 };
-export declare type ValidatorFn = (value: any, name: string) => ValidatorErrorMap | undefined;
-export declare type MorphParams = {
+export type ValidatorFn = (value: any, name: string) => ValidatorErrorMap | undefined;
+export type MorphParams = {
     /**
      * Indicates the class is polymorphic and defines the property name that
      * determines the final class.
@@ -48,7 +48,7 @@ export declare type MorphParams = {
  * For direct property setting, the following metadata can be specified to help
  * manage the lifecycle of the value.
  */
-export declare type PropertyParams = {
+export type PropertyParams = {
     /**
      * The public name of this property. E.g. `title`
      */
@@ -70,17 +70,17 @@ export declare type PropertyParams = {
      * value to the given class constructor.
      * @future 'object'
      */
-    type?: "boolean" | "string" | "number" | "enum" | Function;
+    type?: 'boolean' | 'string' | 'number' | 'enum' | Function;
     /**
      * If defined, either allows array or scalar ('mixed') or strictly array ('strict')
      */
-    listType?: "mixed" | "strict";
+    listType?: 'mixed' | 'strict';
     /**
      * For enum type, the list of allowed values.
      */
     enumValues?: any[];
 };
-export declare type MethodParams = {
+export type MethodParams = {
     /**
      * The public name of the property (e.g. 'title'). Only matters for setter/getter.
      */
@@ -107,9 +107,9 @@ export declare type MethodParams = {
      */
     deserialize?: string;
 };
-export declare type TransformerPropertyDef = PropertyParams & MethodParams;
-export declare type TransormerPropertyOverridesMap = Record<string, Partial<TransformerPropertyDef>>;
-export declare type DecoratedMorphClass = DecoratedClass<MorphParams, MethodParams, PropertyParams>;
+export type TransformerPropertyDef = PropertyParams & MethodParams;
+export type TransormerPropertyOverridesMap = Record<string, Partial<TransformerPropertyDef>>;
+export type DecoratedMorphClass = DecoratedClass<MorphParams, MethodParams, PropertyParams>;
 export declare const getMorphDecoratorBuilder: () => DecoratedClassBuilder<any, any, any, any>;
 /**
  * Directly handles serialization/deserialization for a class. The `overrides` parameter allows
@@ -119,6 +119,11 @@ export declare const getMorphDecoratorBuilder: () => DecoratedClassBuilder<any, 
  */
 export interface Morpher {
     deserialize<T extends any = any>(source: any, overrides?: TransormerPropertyOverridesMap): T;
+    /**
+     * Applies property transformation rules to given instance. This allows for updating an instance
+     * initially hydrated by the morpher.
+     */
+    update<T extends any = any>(inst: T, source: any, overrides?: TransormerPropertyOverridesMap): any;
     serialize<T extends any = any>(source: any, overrides?: TransormerPropertyOverridesMap): Record<string, any>;
 }
 /**

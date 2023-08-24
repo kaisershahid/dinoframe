@@ -17,7 +17,7 @@ export declare const getConstructorForGid: (gid: string) => Function;
  * the gid to the subclass (otherwise it'll always be associated with the base.)
  */
 export declare const swapConstructorWithSubclass: (subclass: Function) => void;
-export declare type GidAccessible = {
+export type GidAccessible = {
     getDecoratorGid(): string;
     ___gid?: string;
 };

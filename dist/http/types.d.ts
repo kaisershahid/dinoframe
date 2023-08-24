@@ -1,19 +1,19 @@
-import { Request, Response } from "express";
-import { DecoratedParameter } from "../decorator";
-export declare type HeaderRecord = {
+import { Request, Response } from 'express';
+import { DecoratedParameter } from '../decorator';
+export type HeaderRecord = {
     name?: string;
     values?: string[];
     description?: string;
     required?: boolean;
 };
-export declare type BaseDecoratorConfig = {
+export type BaseDecoratorConfig = {
     [key: string]: any;
     priority?: number;
     path?: string;
     methods?: string[];
     headers?: Record<string, HeaderRecord>;
 };
-export declare type RouteConfig = BaseDecoratorConfig & {
+export type RouteConfig = BaseDecoratorConfig & {
     path: string;
     /** @todo unsupported; reconcile with @RequestParam */
     parameters?: Record<string, ParameterRecord>;
@@ -22,59 +22,59 @@ export declare type RouteConfig = BaseDecoratorConfig & {
     /** @todo unsupported */
     response?: ResponseRecord;
 };
-export declare type MiddlewareConfig = BaseDecoratorConfig & {};
-export declare type ErrorMiddlewareConfig = BaseDecoratorConfig & {};
+export type MiddlewareConfig = BaseDecoratorConfig & {};
+export type ErrorMiddlewareConfig = BaseDecoratorConfig & {};
 export declare enum HandlerConfigType {
     route = 1,
     middleware = 2,
     error = 3
 }
-export declare type HandlerConfig = (RouteConfig | MiddlewareConfig | ErrorMiddlewareConfig) & {
+export type HandlerConfig = (RouteConfig | MiddlewareConfig | ErrorMiddlewareConfig) & {
     type: HandlerConfigType;
 };
-export declare type ControllerConfig = BaseDecoratorConfig & {
+export type ControllerConfig = BaseDecoratorConfig & {
     /** @todo unsupported */
     deserializer?: any;
 };
-export declare type InjectableParamContext = {
+export type InjectableParamContext = {
     request: Request;
     response: Response;
     def: RequestParamConfig;
 };
-export declare type InjectableParamValidator = (value: any, context: InjectableParamContext) => string | undefined;
-export declare type InjectableParamTransformer = (value: any, context: InjectableParamContext) => any;
-export declare type RequestParamConfig = {
+export type InjectableParamValidator = (value: any, context: InjectableParamContext) => string | undefined;
+export type InjectableParamTransformer = (value: any, context: InjectableParamContext) => any;
+export type RequestParamConfig = {
     name: string;
     required?: boolean;
     enumValues?: any[];
     validator?: InjectableParamValidator;
     transformer?: InjectableParamTransformer;
 };
-export declare type InjectedRequestParam = DecoratedParameter & RequestParamConfig;
+export type InjectedRequestParam = DecoratedParameter & RequestParamConfig;
 export declare class RequestParamError extends Error {
     params: RequestParamConfig;
-    constructor(message: any, params: RequestParamConfig);
+    constructor(message: string, params: RequestParamConfig);
 }
-export declare type ParameterRecord = {
+export type ParameterRecord = {
     name?: string;
-    type?: "string" | "number";
+    type?: 'string' | 'number';
     enumValues?: string[];
     description?: string;
     required?: boolean;
 };
-export declare type BodyExampleRecord = {
+export type BodyExampleRecord = {
     description?: string;
     value: any;
 };
-export declare type BodyRecord = {
+export type BodyRecord = {
     description?: string;
     examples?: BodyExampleRecord[];
 };
-export declare type ResponseRecord = {
+export type ResponseRecord = {
     headers?: Record<string, HeaderRecord>;
     body?: BodyRecord;
 };
-export declare type HandlerRecord = {
+export type HandlerRecord = {
     type: HandlerConfigType;
     /** Default: `''` */
     path: string;

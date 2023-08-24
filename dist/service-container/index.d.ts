@@ -1,5 +1,5 @@
-import { DependencyMeta, InjectableList, Container, ServiceRecord, ServiceState, FactoryContainer } from "./types";
-import { DecoratedServiceRecord } from "./utils";
+import { DependencyMeta, InjectableList, Container, ServiceRecord, ServiceState, FactoryContainer } from './types';
+import { DecoratedServiceRecord } from './utils';
 export declare const PROVIDER_ID = "service-container";
 /**
  * Keeps track of an individual service's dependencies. Await `ServiceTracker.promise` to
@@ -67,7 +67,7 @@ export declare class ServiceContainer implements Container {
      * Returns instances matching interface in high-to-low priority order.
      */
     query<T extends any = any>(matchInterface: string): T[];
-    register(metadata: DecoratedServiceRecord): void;
+    register(metadata: DecoratedServiceRecord): this;
     startup(): Promise<Container>;
     protected initServiceFromRecord(rec: ServiceRecord): Promise<any>;
     private waitOnDependencies;
