@@ -1,6 +1,6 @@
 {
 	"name": "@acmedinotech/dinoframe",
-	"version": "0.1.20230824",
+	"version": "0.1.20230824_1",
 	"scripts": {
 		"test": "npx jest",
 		"pack": "npm pack",
